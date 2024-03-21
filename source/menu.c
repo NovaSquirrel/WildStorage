@@ -201,6 +201,14 @@ int choose_file() {
 			strlcpy(name_buffer, cur->d_name, sizeof(name_buffer));
 			if(cur->d_type == DT_DIR) {
 				strlcat(name_buffer, "/", sizeof(name_buffer));
+			} else {
+				int length = strlen(cur->d_name);
+				if(( // Only show filenames ending in .SAV with any capitalization
+					(cur->d_name[length-1] != 'v' && cur->d_name[length-1] != 'V') ||
+					(cur->d_name[length-2] != 'a' && cur->d_name[length-2] != 'A') ||
+					(cur->d_name[length-3] != 's' && cur->d_name[length-3] != 'S') ||
+					(cur->d_name[length-4] != '.')))
+					continue;
 			}
 
 			// Record the entry in the list
