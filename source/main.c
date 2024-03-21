@@ -44,11 +44,11 @@
 
 // ------------------------------------------------------------------------------------------------
 // Prototypes
-
+void menu_storage();
 
 // ------------------------------------------------------------------------------------------------
 // Strings
-const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Miscellaneous", "Switch player", "Quit"};
+const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Miscellaneous", "Edit player", "Quit"};
 const char *file_options[] = {"Load file", "Save file", "Save backup"};
 const char *player_options[] = {"1st player", "2nd player", "3rd player", "4th player"};
 const char *misc_menu_options[] = {"Emotions", "Face/Hair"};
@@ -59,8 +59,6 @@ const char *misc_menu_options[] = {"Emotions", "Face/Hair"};
 char full_file_path[256];
 char title_buffer[32];
 char text_conversion_buffer[40];
-int current_player = 0;
-int player_offset = 0;
 u8 savefile[256 * 1024];
 
 u16 *mainBGMap;
@@ -79,8 +77,11 @@ void show_player_information() {
 	clear_screen(subBGMap);
 	map_print(subBGMap, 1, 1, full_file_path);
 	map_printf(subBGMap, 1, 2, "Town: %s", text_from_save(4, 8));
-	map_printf(subBGMap, 1, 3, "Player: %s", text_from_save(0x228E + player_offset, 8));
-	map_printf(subBGMap, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
+	map_printf(subBGMap, 1, 3, "Player 1: %s", text_from_save(0x228E + 8844*0, 8));
+	map_printf(subBGMap, 1, 4, "Player 2: %s", text_from_save(0x228E + 8844*1, 8));
+	map_printf(subBGMap, 1, 5, "Player 3: %s", text_from_save(0x228E + 8844*2, 8));
+	map_printf(subBGMap, 1, 6, "Player 4: %s", text_from_save(0x228E + 8844*3, 8));
+	//map_printf(subBGMap, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
 }
 
 int reload_savefile() {
@@ -154,10 +155,6 @@ void menu_save_load() {
 	}
 }
 
-void menu_storage() {
-
-}
-
 void menu_map() {
 
 }
@@ -175,18 +172,18 @@ void menu_miscellaneous() {
 }
 
 void menu_switch_player() {
+	/*
 	int result = choose_from_list("Which player?", player_options, 4, 0);
 	if(result >= 0)
 		current_player = result;
 	player_offset = current_player * 8844;
 	show_player_information();
+	*/
 }
 
 int main(int argc, char **argv) {
 	lcdMainOnBottom();
 	keysSetRepeat(16, 5);
-
-	//clear_screen();
 
 	vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
 	vramSetBankB(VRAM_B_MAIN_SPRITE_0x06400000);
@@ -249,14 +246,17 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	int main_menu_y = 0;
 	while(1) {
-		sprintf(title_buffer, "Main menu (player %d)", current_player+1);
-		switch(choose_from_list(title_buffer, main_menu_options, 8, 0)) {
+		sprintf(title_buffer, "Main menu");
+		main_menu_y = choose_from_list(title_buffer, main_menu_options, 8, main_menu_y);
+		switch(main_menu_y) {
 			case 0:
 				menu_save_load();
 				break;
 			case 1:
 				menu_storage();
+				show_player_information();
 				break;
 			case 2:
 				menu_map();
@@ -275,6 +275,9 @@ int main(int argc, char **argv) {
 				break;
 			case 7:
 				return 0;
+			default:
+				main_menu_y = 0;
+				break;
 		}
 	}
 }

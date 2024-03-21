@@ -38,7 +38,11 @@ const char *are_you_sure_options[] = {"No", "Yes!"};
 const char *ok_options[] = {"OK"};
 
 void clear_screen(u16 *screen) {
-	dmaFillHalfWords(' ', screen, 32*32);
+	dmaFillHalfWords(' ', screen, 32*32*2);
+}
+
+void map_put(u16 *map, int x, int y, char c) {
+	map[y * 32 + x] = c;
 }
 
 void map_print(u16 *map, int x, int y, const char *text) {
@@ -58,9 +62,26 @@ void map_printf(u16 *map, int x, int y, const char *fmt, ...) {
 	va_end(argp);
 }
 
-int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice) {
+void map_box(u16 *map, int x, int y, int w, int h) {
+	map_put(map, x,     y, TILE_BORDER_DR);
+	map_put(map, x+w-1, y, TILE_BORDER_DL);
+	map_put(map, x,     y+h-1, TILE_BORDER_UR);
+	map_put(map, x+w-1, y+h-1, TILE_BORDER_UL);
+
+	for(int i=1; i<(w-1); i++) {
+		map_put(map, x+i, y,     TILE_BORDER_HORIZ);
+		map_put(map, x+i, y+h-1, TILE_BORDER_HORIZ);
+	}
+	for(int i=1; i<(h-1); i++) {
+		map_put(map, x,     y+i, TILE_BORDER_VERT);
+		map_put(map, x+w-1, y+i, TILE_BORDER_VERT);
+	}
+}
+
+int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choices, int choice_count, int current_choice) {
 	#define OPTIONS_PER_PAGE 20
 	#define OPTIONS_START_Y 2
+	clear_screen(map);
 	bool redraw_page = 1;
 	int page_number;
 
@@ -70,19 +91,19 @@ int choose_from_list(const char *prompt, const char **choices, int choice_count,
 		if(redraw_page) {
 			page_number = current_choice / OPTIONS_PER_PAGE;
 
-			clear_screen(mainBGMap);
-			map_print(mainBGMap,  1, 1, prompt);
+			clear_screen(map);
+			map_print(map,  1, 1, prompt);
 			if(max_page > 1) {
-				map_printf(mainBGMap, 25, 23, "%2d/%2d", page_number+1, max_page);
+				map_printf(map, 25, 23, "%2d/%2d", page_number+1, max_page);
 			}
 
 			for(int i=0; i<OPTIONS_PER_PAGE; i++) {
 				if((page_number * OPTIONS_PER_PAGE + i) >= choice_count)
 					break;
-				map_print(mainBGMap, 2, i+OPTIONS_START_Y, choices[page_number * OPTIONS_PER_PAGE + i]);
+				map_print(map, 2, i+OPTIONS_START_Y, choices[page_number * OPTIONS_PER_PAGE + i]);
 			}
 
-			map_print(mainBGMap,  1, (current_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, ">");
+			map_print(map,  1, (current_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, "\xf0");
 
 			redraw_page = 0;
 		}
@@ -121,8 +142,8 @@ int choose_from_list(const char *prompt, const char **choices, int choice_count,
 			if(page_number != (current_choice / OPTIONS_PER_PAGE)) {
 				redraw_page = 1;
 			} else {
-				map_print(mainBGMap, 1, (old_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, " ");
-				map_print(mainBGMap, 1, (current_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, ">");
+				map_print(map, 1, (old_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, " ");
+				map_print(map, 1, (current_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, "\xf0");
 			}
 		}
 
@@ -133,6 +154,10 @@ int choose_from_list(const char *prompt, const char **choices, int choice_count,
 		if(keys_down & KEY_START)
 			return -2;
 	}
+}
+
+int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice) {
+	return choose_from_list_on_screen(mainBGMap, prompt, choices, choice_count, current_choice);
 }
 
 int confirm_choice(const char *prompt) {

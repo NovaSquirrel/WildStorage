@@ -19,5 +19,32 @@ int choose_file();
 void clear_screen(u16 *screen);
 void map_print(u16 *map, int x, int y, const char *text);
 void map_printf(u16 *map, int x, int y, const char *fmt, ...);
+void map_box(u16 *map, int x, int y, int w, int h);
+void map_put(u16 *map, int x, int y, char c);
 int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice);
+int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choices, int choice_count, int current_choice);
 
+const char *name_for_item(unsigned short item_id);
+unsigned short icon_for_item(unsigned short item_id);
+#define AREA_NOT_AVAILABLE 0xf030
+#define EMPTY_ITEM 0xfff1
+#define INVALID_ITEM_SLOT 0xffff
+
+// Special tileset characters
+enum {
+	TILE_ARROW_ACTIVE   = 0xf0,
+	TILE_ARROW_INACTIVE = 0xf1,
+	TILE_BORDER_HORIZ   = 0xf2,
+	TILE_BORDER_VERT    = 0xf3,
+	TILE_BORDER_DR = 0xf4,
+	TILE_BORDER_DL = 0xf5,
+	TILE_BORDER_UR = 0xf6,
+	TILE_BORDER_UL = 0xf7,
+	TILE_BORDER_BOX = 0xf8,
+	TILE_BUTTON_A = 0xe0,
+	TILE_BUTTON_B = 0xe1,
+	TILE_BUTTON_X = 0xe2,
+	TILE_BUTTON_Y = 0xe3,
+	TILE_BUTTON_L = 0xe4,
+	TILE_BUTTON_R = 0xe5,
+};
