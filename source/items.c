@@ -3407,7 +3407,7 @@ unsigned short icon_for_item(unsigned short item_id) {
 		return ICON_SHIRT;
 	if((item_id >= 0x12b0 && item_id <= 0x12e7) || (item_id >= 0x42a4 && item_id <= 0x4380))
 		return ICON_BUG;
-	if((item_id >= 0x12e8 && item_id <= 0x131f) || (item_id >= 0x4384 && item_id >= 0x4460))
+	if((item_id >= 0x12e8 && item_id <= 0x131f) || (item_id >= 0x4384 && item_id <= 0x4460))
 		return ICON_FISH;
 	if(item_id >= 0x1320 && item_id <= 0x1322)
 		return ICON_TRASH;
