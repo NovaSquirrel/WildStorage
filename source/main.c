@@ -89,7 +89,7 @@ int reload_savefile() {
 	size_t r = fread(savefile, 1, sizeof(savefile), file);
 	fclose(file);
 	int success = r == sizeof(savefile);
-	if(memcmp(savefile+2, savefile+2+0x15FE0, 10) != 0) { // Name of the town should be the same between both copies of the town
+	if(memcmp(savefile+2, savefile+2+TOWN_SAVE_SIZE, 10) != 0) { // Name of the town should be the same between both copies of the town
 		return 0;
 	}
 	if(success) {
@@ -108,6 +108,18 @@ void wait_for_start() {
 	}
 }
 
+void fix_checksum() {
+	u16 total = 0;
+	for(int i=0; i < TOWN_SAVE_SIZE; i += 2) {
+		total += get_savefile_u16(i);
+	}
+	u16 checksum_in_save = get_savefile_u16(TOWN_SAVE_SIZE-4);
+	if(total != 0) {
+		set_savefile_u16(TOWN_SAVE_SIZE-4, checksum_in_save - total);
+	}
+	memcpy(savefile + TOWN_SAVE_SIZE, savefile, TOWN_SAVE_SIZE);
+}
+
 void menu_save_load() {
 	switch(choose_from_list("Save/Load", file_options, 3, 0)) {
 		case 0: // Load
@@ -121,6 +133,7 @@ void menu_save_load() {
 			break;
 		case 1: // Save
 		{
+			fix_checksum();
 			FILE *file = fopen(full_file_path, "wb");
 			size_t w = fwrite(savefile, 1, sizeof(savefile), file);
 			fclose(file);
@@ -133,6 +146,7 @@ void menu_save_load() {
 		}
 		case 2: // Save backup
 		{
+			fix_checksum();
 			time_t timer;
 			struct tm* tm_info;
 			char buffer[64];

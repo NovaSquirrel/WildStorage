@@ -13,6 +13,9 @@ extern u16 *mainBGMap2;
 extern u16 *subBGMap;
 extern u16 *subBGMap2;
 
+void set_savefile_u16(int index, u16 value);
+u16 get_savefile_u16(int index);
+
 int confirm_choice(const char *prompt);
 int popup_notice(const char *prompt);
 int choose_file();
@@ -48,3 +51,5 @@ enum {
 	TILE_BUTTON_L = 0xe4,
 	TILE_BUTTON_R = 0xe5,
 };
+
+#define TOWN_SAVE_SIZE 0x15FE0

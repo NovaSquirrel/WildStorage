@@ -249,6 +249,8 @@ void menu_storage() {
 	storage_screen = 0;
 	storage_screen_inventory[0] = 0;
 	storage_screen_inventory[1] = 0;
+	storage_page[0] = 0;
+	storage_page[1] = 0;
 	storage_map = subBGMap;
 
 	redraw_storage_screens();
@@ -280,10 +282,13 @@ void menu_storage() {
 			}
 		}
 		if(keys_repeat & KEY_LEFT) {
+			int size = inventory_size[storage_screen_inventory[storage_screen]];
 			if(storage_page[storage_screen] > 0)
 				storage_page[storage_screen]--;
-			else if(inventory_size[storage_screen_inventory[storage_screen]] > 15)
-				storage_page[storage_screen] = inventory_size[storage_screen_inventory[storage_screen]]/15-1;
+			else if(size > 15) {
+				// Go to the last page
+				storage_page[storage_screen] = size/15 - (size%15 == 0);
+			}
 			redraw_storage_screens();
 		}
 		if(keys_repeat & KEY_RIGHT) {
