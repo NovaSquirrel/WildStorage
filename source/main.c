@@ -45,6 +45,7 @@
 // ------------------------------------------------------------------------------------------------
 // Prototypes
 void menu_storage();
+void menu_player_edit();
 
 // ------------------------------------------------------------------------------------------------
 // Strings
@@ -77,10 +78,10 @@ void show_player_information() {
 	clear_screen(subBGMap);
 	map_print(subBGMap, 1, 1, full_file_path);
 	map_printf(subBGMap, 1, 2, "Town: %s", text_from_save(4, 8));
-	map_printf(subBGMap, 1, 3, "Player 1: %s", text_from_save(0x228E + 8844*0, 8));
-	map_printf(subBGMap, 1, 4, "Player 2: %s", text_from_save(0x228E + 8844*1, 8));
-	map_printf(subBGMap, 1, 5, "Player 3: %s", text_from_save(0x228E + 8844*2, 8));
-	map_printf(subBGMap, 1, 6, "Player 4: %s", text_from_save(0x228E + 8844*3, 8));
+	map_printf(subBGMap, 1, 3, "Player 1: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*0, 8));
+	map_printf(subBGMap, 1, 4, "Player 2: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*1, 8));
+	map_printf(subBGMap, 1, 5, "Player 3: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*2, 8));
+	map_printf(subBGMap, 1, 6, "Player 4: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*3, 8));
 	//map_printf(subBGMap, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
 }
 
@@ -285,7 +286,7 @@ int main(int argc, char **argv) {
 				menu_miscellaneous();
 				break;
 			case 6:
-				menu_switch_player();
+				menu_player_edit();
 				break;
 			case 7:
 				return 0;

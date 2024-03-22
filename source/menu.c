@@ -85,6 +85,9 @@ int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choice
 	bool redraw_page = 1;
 	int page_number;
 
+	if(current_choice >= choice_count)
+		current_choice = choice_count - 1;
+
 	int max_page = choice_count / OPTIONS_PER_PAGE + ((choice_count % OPTIONS_PER_PAGE) != 0);
 
 	while(1) {

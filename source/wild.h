@@ -15,6 +15,8 @@ extern u16 *subBGMap2;
 
 void set_savefile_u16(int index, u16 value);
 u16 get_savefile_u16(int index);
+const char *player_name(int which);
+const char *text_from_save(int index, int length);
 
 int confirm_choice(const char *prompt);
 int popup_notice(const char *prompt);
@@ -53,3 +55,4 @@ enum {
 };
 
 #define TOWN_SAVE_SIZE 0x15FE0
+#define PER_PLAYER_OFFSET 8844
