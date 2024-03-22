@@ -39,16 +39,31 @@
 const char *edit_player_options[] = {"Emotions", "Hair style", "Hair color", "Face", "Gender", "Tan", "Birth month", "Birth day"};
 
 const char *face_options[] = {
-	"Male brown eyes, mascara", "Male brows", "Male blue eyes + lids", "Male blue small pupils", "Male normal brown eyes", "Male arch eyes", "Male cheeky", "Male small pupils no brows",
-	"Female anime eyes", "Female oval eyelash", "Female cheeky", "Female blue eyes +lids", "Female mascara", "Female arch eyes + lash", "Female standard", "Female mascara + brows"
+	"M Brown Eyes + Lashes",
+	"M Black Eyes + Brows",
+	"M Blue Eyes + Eyelids",
+	"M Green+Small Pupils+Brows",
+	"M Brown Eyes",
+	"M Arched Black Eyes",
+	"M Blue Eyes + Rosy Cheeks",
+	"M Blue Eyes + Small Pupils",
+	"F Black Anime Eyes w/ Lash",
+	"F Black Squinted Eyes + Lash",
+	"F Blue Eyes + Rosey Cheeks",
+	"F Blue Eyes + Eyelids",
+	"F Green Oval Eyes w/ Lashes",
+	"F Brown Arch+Lash",
+	"F Blue Eyes"
+	"F Green Circle Eyes+Lashes"
 };
+
 const char *hair_style_options[] = {
-	"Male regular", "Male cowlick", "Male cover eye", "Male spikey", "Male coiff", "Male one spike", "Male bowl cut - 2 lines", "Male bowl cut - moe",
-	"Female regular", "Female ears long", "Female pig tails", "Female triangle spikes", "Female pony tail", "Female pony stub", "Female ears short", "Female curls"
+	"Male buzz cut", "Male cowlick", "Male long bangs (cover eye)", "Male spikes", "Male middle part", "Male inward spikes", "Male bowl cut", "Male spiked bangs",
+	"Female rightward bangs", "Female mop top", "Female pig tails", "Female triangle spikes", "Female pony tail", "Female pony stub", "Female ears short", "Female curls"
 };
 const char *hair_color_options[] = {"Dark brown", "Light brown", "Orange", "Blue", "Yellow", "Green", "Pink", "White"};
 const char *tan_options[] = {"No tan", "Light tan", "Tan", "Dark tan"};
-const char *gender_options[] = {"Boy", "Girl"};
+const char *gender_options[] = {"Male", "Female"};
 const char *month_options[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 const char *day_options[] = {"1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th", "30th", "31st"};
 const char *emotions_options[] = {

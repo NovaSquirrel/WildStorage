@@ -171,6 +171,16 @@ int popup_notice(const char *prompt) {
 	return choose_from_list(prompt, ok_options, 1, 0);
 }
 
+int popup_noticef(const char *fmt, ...) {
+	va_list argp;
+	va_start(argp, fmt);
+	char buffer[128];
+	vsprintf(buffer, fmt, argp);
+	int code = choose_from_list(buffer, ok_options, 1, 0);
+	va_end(argp);
+	return code;
+}
+
 int choose_file() {
 	#define MAX_FILES_IN_FOLDER 100
 	char *directory_names[MAX_FILES_IN_FOLDER];

@@ -46,13 +46,13 @@
 // Prototypes
 void menu_storage();
 void menu_player_edit();
-void menu_miscellaneous();
+void menu_utility();
 void load_extra_storage();
 void save_extra_storage();
 
 // ------------------------------------------------------------------------------------------------
 // Strings
-const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Miscellaneous", "Edit player", "Quit"};
+const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Utilities", "Edit player", "Quit"};
 const char *file_options[] = {"Load file", "Save file", "Save backup"};
 
 // ------------------------------------------------------------------------------------------------
@@ -229,6 +229,8 @@ int main(int argc, char **argv) {
 
     setBrightness(3, 0); // Both screens full brightness
 
+	//keyboardShow();
+
 	bool init_ok = fatInitDefault();
 	if(!init_ok) {
 		map_print(mainBGMap,  0, 0, "fatInitDefault() error");
@@ -277,7 +279,7 @@ int main(int argc, char **argv) {
 				menu_house();
 				break;
 			case 5:
-				menu_miscellaneous();
+				menu_utility();
 				break;
 			case 6:
 				menu_player_edit();

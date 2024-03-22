@@ -1,5 +1,39 @@
-// Derived from the item list in Animal Map
+/*
+  WildStorage
+  A tool for ACWW to add extra item storage
+
+  Copyright (c) 2024 NovaSquirrel
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+  -----
+
+  This program references research and code from Animal Map
+
+  (c) 2005-2007 DsPet
+  Released as FreeWare and Open-source
+  Additional modifications thanks to Virus of Haxxor World
+*/
+// Item list derived from the one in Animal Map
+#include <nds.h>
 #include <stdlib.h>
+#include "wild.h"
 
 struct item {
 	unsigned short index;
@@ -173,7 +207,7 @@ struct item {
   {0x00a2, "parched black roses + water"},
   {0x00a3, "parched blue roses + water"},
   {0x00a4, "parched Jacob's Ladder+water"},
-  {0x00a5, "parched black rose:gold"},
+  {0x00a5, "parched black rose (gold)"},
   {0x00a6, "fake hole"},
   {0x00a7, "custom pattern 1-1"},
   {0x00a8, "custom pattern 1-2"},
@@ -212,7 +246,7 @@ struct item {
   {0x00c9, "palm tree size 3"},
   {0x00ca, "palm tree size 4"},
   {0x00cb, "palm tree size 5"},
-  {0x00cc, "palm tree size 6 (with coconuts)"},
+  {0x00cc, "palm tree size 6 (w coconuts)"},
   {0x00cd, "palm tree adult"},
   {0x00ce, "palm tree adult"},
   {0x00cf, "palm tree adult"},
@@ -1154,14 +1188,14 @@ struct item {
   {0x139d, "flame umbrella"},
   {0x139e, "camo umbrella"},
   {0x139f, "spider umbrella"},
-  {0x13a0, "not used (custom art umbrella 1)"},
-  {0x13a1, "not used (custom art umbrella 2)"},
-  {0x13a2, "not used (custom art umbrella 3)"},
-  {0x13a3, "not used (custom art umbrella 4)"},
-  {0x13a4, "not used (custom art umbrella 5)"},
-  {0x13a5, "not used (custom art umbrella 6)"},
-  {0x13a6, "not used (custom art umbrella 7)"},
-  {0x13a7, "not used (custom art umbrella 8)"},
+  {0x13a0, "not used (umbrella 1)"},
+  {0x13a1, "not used (umbrella 2)"},
+  {0x13a2, "not used (umbrella 3)"},
+  {0x13a3, "not used (umbrella 4)"},
+  {0x13a4, "not used (umbrella 5)"},
+  {0x13a5, "not used (umbrella 6)"},
+  {0x13a6, "not used (umbrella 7)"},
+  {0x13a7, "not used (umbrella 8)"},
   {0x13a8, "pilot's cap"},
   {0x13a9, "fireman's hat"},
   {0x13aa, "baby's hat"},
@@ -1358,9 +1392,9 @@ struct item {
   {0x148b, "not used (jacobs ladder mask)"},
   {0x148d, "gold roses (mask)"},
   {0x148e, "not used (dandelions mask)"},
-  {0x148f, "not used (dandelion puff mask)"},
+  {0x148f, "not used (d.puff mask)"},
   {0x1490, "not used (clover mask)"},
-  {0x1491, "not used (four-leaf clover mask)"},
+  {0x1491, "not used (4-leaf clover mask)"},
   {0x1492, "100 Bells"},
   {0x1493, "200 Bells"},
   {0x1494, "300 Bells"},
@@ -3491,4 +3525,93 @@ const char *name_for_item(unsigned short item_id) {
 		return found->name;
 	}
 	return NULL;
+}
+
+int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item) {
+	#define OPTIONS_PER_PAGE 20
+	#define OPTIONS_START_Y 2
+
+	int current_choice = 0;
+	struct item find_me = {initial_item};
+	struct item *found = (struct item*)bsearch(&find_me, item_list, sizeof(item_list) / sizeof(struct item), sizeof(struct item), item_comparator);
+	if(found) {
+		current_choice = (found - item_list) / sizeof(item_list);
+	}
+
+	clear_screen(map);
+	bool redraw_page = 1;
+	int page_number;
+
+	const int choice_count =  sizeof(item_list) / sizeof(struct item);
+
+	if(current_choice >= choice_count)
+		current_choice = choice_count - 1;
+
+	int max_page = choice_count / OPTIONS_PER_PAGE + ((choice_count % OPTIONS_PER_PAGE) != 0);
+
+	while(1) {
+		if(redraw_page) {
+			page_number = current_choice / OPTIONS_PER_PAGE;
+
+			clear_screen(map);
+			map_print(map,  1, 1, prompt);
+			map_printf(map, 25, 23, "%2d/%2d", page_number+1, max_page);
+
+			for(int i=0; i<OPTIONS_PER_PAGE; i++) {
+				if((page_number * OPTIONS_PER_PAGE + i) >= choice_count)
+					break;
+				map_print(map, 2, i+OPTIONS_START_Y, item_list[page_number * OPTIONS_PER_PAGE + i].name);
+			}
+
+			map_print(map,  1, (current_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, "\xf0");
+
+			redraw_page = 0;
+		}
+
+		swiWaitForVBlank();
+		scanKeys();
+
+		// Respond to button presses
+
+		uint32_t keys_down = keysDown();
+		uint32_t keys_repeat = 	keysDownRepeat();
+		int old_choice = current_choice;
+
+		if(keys_repeat & KEY_UP) {
+			current_choice--;
+			if(current_choice < 0)
+				current_choice = choice_count - 1;
+		}
+		if(keys_repeat & KEY_DOWN) {
+			current_choice++;
+			if(current_choice >= choice_count)
+				current_choice = 0;
+		}
+		if(keys_repeat & KEY_LEFT) {
+			current_choice -= 20;
+			if(current_choice < 0)
+				current_choice = 0;
+		}
+		if(keys_repeat & KEY_RIGHT) {
+			current_choice += 20;
+			if(current_choice >= choice_count)
+				current_choice = choice_count - 1;
+		}
+
+		if(current_choice != old_choice) {
+			if(page_number != (current_choice / OPTIONS_PER_PAGE)) {
+				redraw_page = 1;
+			} else {
+				map_print(map, 1, (old_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, " ");
+				map_print(map, 1, (current_choice % OPTIONS_PER_PAGE) + OPTIONS_START_Y, "\xf0");
+			}
+		}
+
+		if(keys_down & KEY_A)
+			return item_list[current_choice].index;
+		if(keys_down & KEY_B)
+			return -1;
+		if(keys_down & KEY_START)
+			return -2;
+	}
 }

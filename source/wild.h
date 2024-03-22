@@ -21,6 +21,7 @@ const char *text_from_save(int index, int length);
 
 int confirm_choice(const char *prompt);
 int popup_notice(const char *prompt);
+int popup_noticef(const char *fmt, ...);
 int choose_file();
 void clear_screen(u16 *screen);
 void map_print(u16 *map, int x, int y, const char *text);
@@ -29,6 +30,7 @@ void map_box(u16 *map, int x, int y, int w, int h);
 void map_put(u16 *map, int x, int y, char c);
 int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice);
 int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choices, int choice_count, int current_choice);
+int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item);
 
 const char *name_for_item(unsigned short item_id);
 unsigned short icon_for_item(unsigned short item_id);
@@ -57,3 +59,5 @@ enum {
 
 #define TOWN_SAVE_SIZE 0x15FE0
 #define PER_PLAYER_OFFSET 8844
+
+#define EXTRA_STORAGE_SIZE 1500

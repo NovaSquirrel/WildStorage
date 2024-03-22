@@ -35,12 +35,17 @@
 #include "wild.h"
 #include "acstr.h"
 
-#define EXTRA_STORAGE_SIZE 1500
-
 // Prototypes -----------------------------------
 const char *text_from_save(int index, int length);
 
+// Strings -----------------------------------
+const char *edit_item_options[] = {"Choose item", "Delete", "Copy", "Paste", "Hex code"};
+// Put item ID in prompt so you can view it that way
+
 // Variables ------------------------------------
+int edit_type_index = 0;
+u16 edit_item_copy = EMPTY_ITEM;
+
 int storage_y = 0;
 int storage_screen = 0;
 int storage_screen_inventory[2];
@@ -52,7 +57,7 @@ int storage_swap_page;
 int storage_swap_y;
 bool storage_swapping = false;
 
-u16 extra_storage[3][1500];
+u16 extra_storage[3][EXTRA_STORAGE_SIZE];
 int edited_extra_storage[3] = {0, 0, 0};
 
 // For personalizing the option text to show the player's name
@@ -102,7 +107,7 @@ void load_extra_storage() {
 		FILE *f = fopen(buffer, "rb");
 		if(f) {
 			if(fread(extra_storage[i], 1, sizeof(extra_storage[i]), f) != sizeof(extra_storage[i]))
-				popup_notice("Bad extra storage file?");
+				popup_noticef("Bad extra storage file? %d", i+1);
 			fclose(f);
 		}
 	}
@@ -118,10 +123,10 @@ void save_extra_storage() {
 			FILE *f = fopen(buffer, "wb");
 			if(f) {
 				if(fwrite(extra_storage[i], 1, sizeof(extra_storage[i]), f) != sizeof(extra_storage[i]))
-					popup_notice("Couldn't save storage file");
+					popup_noticef("Couldn't save storage file %d", i+1);
 				fclose(f);
 			} else {
-				popup_notice("Couldn't create storage file");
+				popup_noticef("Couldn't create storage file %d", i+1);
 			}
 
 			edited_extra_storage[i] = 0;
@@ -389,7 +394,37 @@ void menu_storage() {
 
 		// Edit
 		if(keys_down & KEY_X) {
+			storage_swapping = false;
+			int index_to_change = storage_page[storage_screen]*15+storage_y;
+			u16 initial_item = get_inventory_item(storage_screen_inventory[storage_screen], index_to_change);
 
+			char buffer[32];
+			sprintf(buffer, "Edit: Item %.4x", initial_item);
+			int edit_type = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, buffer, edit_item_options, 4, edit_type_index);
+			if(edit_type >= 0) {
+				edit_type_index = edit_type;
+
+				switch(edit_type) {
+					case 0: // Choose
+					{
+						int new_item = choose_item_from_all_on_screen(storage_swap_screen ? mainBGMap : subBGMap, "Select an item to put here", initial_item);
+						if(new_item >= 0) {
+							set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
+						}
+						break;
+					}
+					case 1: // Delete
+						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, EMPTY_ITEM);
+						break;
+					case 2: // Copy
+						edit_item_copy = initial_item;
+						break;
+					case 3: // Paste
+						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, edit_item_copy);
+						break;
+				}
+			}
+			redraw_storage_screens();
 		}
 
 		// Send items over
