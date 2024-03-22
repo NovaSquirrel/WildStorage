@@ -37,9 +37,10 @@
 
 // Prototypes -----------------------------------
 const char *text_from_save(int index, int length);
+int item_sort_compare(const void *a, const void *b);
 
 // Strings -----------------------------------
-const char *edit_item_options[] = {"Choose item", "Delete", "Copy", "Paste", "Hex code"};
+const char *edit_item_options[] = {"Choose item", "Delete", "Copy", "Paste", "Sort this inventory"};
 // Put item ID in prompt so you can view it that way
 
 // Variables ------------------------------------
@@ -177,19 +178,19 @@ void set_inventory_item(int inventory, int slot, u16 item) {
 	if(slot >= inventory_size[inventory])
 		return;
 	switch(inventory) {
-		case 0:	 set_savefile_u16(0x01B2E + 8844*0 + slot*2, item); break; // Inventory
+		case 0:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*0 + slot*2, item); break; // Inventory
 		case 1:  set_savefile_u16(0x15430 + 180*0  + slot*2, item); break; // Closet
 		case 2:  break;
 
-		case 3:	 set_savefile_u16(0x01B2E + 8844*1 + slot*2, item); break; // Inventory
+		case 3:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*1 + slot*2, item); break; // Inventory
 		case 4:  set_savefile_u16(0x15430 + 180*1  + slot*2, item); break; // Closet
 		case 5:  break;
 
-		case 6:	 set_savefile_u16(0x01B2E + 8844*2 + slot*2, item); break; // Inventory
+		case 6:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*2 + slot*2, item); break; // Inventory
 		case 7:  set_savefile_u16(0x15430 + 180*2  + slot*2, item); break; // Closet
 		case 8:  break;
 
-		case 9:	 set_savefile_u16(0x01B2E + 8844*3 + slot*2, item); break; // Inventory
+		case 9:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*3 + slot*2, item); break; // Inventory
 		case 10: set_savefile_u16(0x15430 + 180*3  + slot*2, item); break; // Closet
 		case 11: break;
 
@@ -201,6 +202,35 @@ void set_inventory_item(int inventory, int slot, u16 item) {
 		case 16: extra_storage[1][slot] = item; edited_extra_storage[1] = true; break;
 		case 17: extra_storage[2][slot] = item; edited_extra_storage[2] = true; break;
 	}
+}
+
+int sort_inventory(int inventory) {
+	switch(inventory) {
+		case 0:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*0], 15, 2, item_sort_compare); break; // Inventory
+		case 1:  qsort(&savefile[0x15430 + 180*0], 90, 2, item_sort_compare); break; // Closet
+		case 2:  return -1;
+
+		case 3:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*1], 15, 2, item_sort_compare); break; // Inventory
+		case 4:  qsort(&savefile[0x15430 + 180*1], 90, 2, item_sort_compare); // Closet
+		case 5:  return -1;
+
+		case 6:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*2], 15, 2, item_sort_compare); break; // Inventory
+		case 7:  qsort(&savefile[0x15430 + 180*2], 90, 2, item_sort_compare); // Closet
+		case 8:  return -1;
+
+		case 9:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*3], 15, 2, item_sort_compare); break; // Inventory
+		case 10: qsort(&savefile[0x15430 + 180*3], 90, 2, item_sort_compare); // Closet
+		case 11: return -1;
+
+		case 12: qsort(&savefile[0x15EDE], 15, 2, item_sort_compare); break; // Recycler
+		case 13: qsort(&savefile[0x15EC0], 15, 2, item_sort_compare); break; // Lost and found
+		case 14: return -1; // Sorting the shop would be weird
+
+		case 15: qsort(extra_storage[0], EXTRA_STORAGE_SIZE, 2, item_sort_compare); edited_extra_storage[0] = true; break;
+		case 16: qsort(extra_storage[1], EXTRA_STORAGE_SIZE, 2, item_sort_compare); edited_extra_storage[1] = true; break;
+		case 17: qsort(extra_storage[2], EXTRA_STORAGE_SIZE, 2, item_sort_compare); edited_extra_storage[2] = true; break;
+	}
+	return 1;
 }
 
 int calc_page_count(int size, int page_size) {
@@ -338,7 +368,7 @@ void menu_storage() {
 			redraw_storage_screens();
 		}
 
-		// Choos new inventory
+		// Choose new inventory
 		if(keys_down & (KEY_L | KEY_R)) {
 			int new_screen = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, "Choose box to display here", storage_inventory_names, 18, storage_screen_inventory[storage_screen]);
 			if(new_screen >= 0) {
@@ -400,7 +430,7 @@ void menu_storage() {
 
 			char buffer[32];
 			sprintf(buffer, "Edit: Item %.4x", initial_item);
-			int edit_type = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, buffer, edit_item_options, 4, edit_type_index);
+			int edit_type = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, buffer, edit_item_options, 5, edit_type_index);
 			if(edit_type >= 0) {
 				edit_type_index = edit_type;
 
@@ -421,6 +451,13 @@ void menu_storage() {
 						break;
 					case 3: // Paste
 						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, edit_item_copy);
+						break;
+					case 4: // Sort this inventory
+						if(sort_inventory(storage_screen_inventory[storage_screen]) == 1) {
+							popup_noticef_on_screen(storage_screen ? mainBGMap : subBGMap, "Sorted %s!", storage_inventory_names[storage_screen_inventory[storage_screen]]);
+						} else {
+							popup_noticef_on_screen(storage_screen ? mainBGMap : subBGMap, "That inventory isn't sortable");
+						}
 						break;
 				}
 			}

@@ -22,6 +22,7 @@ const char *text_from_save(int index, int length);
 int confirm_choice(const char *prompt);
 int popup_notice(const char *prompt);
 int popup_noticef(const char *fmt, ...);
+int popup_noticef_on_screen(u16 *map, const char *fmt, ...);
 int choose_file();
 void clear_screen(u16 *screen);
 void map_print(u16 *map, int x, int y, const char *text);
