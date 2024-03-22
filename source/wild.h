@@ -16,6 +16,7 @@ extern u16 *subBGMap2;
 void set_savefile_u16(int index, u16 value);
 u16 get_savefile_u16(int index);
 const char *player_name(int which);
+const char *town_name();
 const char *text_from_save(int index, int length);
 
 int confirm_choice(const char *prompt);

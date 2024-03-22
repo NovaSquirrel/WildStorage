@@ -31,8 +31,11 @@
   Additional modifications thanks to Virus of Haxxor World
 */
 #include <nds.h>
+#include <stdio.h>
 #include "wild.h"
 #include "acstr.h"
+
+#define EXTRA_STORAGE_SIZE 1500
 
 // Prototypes -----------------------------------
 const char *text_from_save(int index, int length);
@@ -49,11 +52,10 @@ int storage_swap_page;
 int storage_swap_y;
 bool storage_swapping = false;
 
-u16 extra_storage_1[1500];
-u16 extra_storage_2[1500];
-u16 extra_storage_3[1500];
+u16 extra_storage[3][1500];
+int edited_extra_storage[3] = {0, 0, 0};
 
-// For personalizing the options
+// For personalizing the option text to show the player's name
 char player_1_inventory_text[32];
 char player_2_inventory_text[32];
 char player_3_inventory_text[32];
@@ -72,7 +74,7 @@ const char *storage_inventory_names[] = {
 	player_2_inventory_text, player_2_closet_text, player_2_mail_text,
 	player_3_inventory_text, player_3_closet_text, player_3_mail_text,
 	player_4_inventory_text, player_4_closet_text, player_4_mail_text,
-	"Recycler bin",       "Lost and found",     "Shop",
+	"Recycler bin",       "Lost and found",  "Shop",
 	"Extra storage 1",    "Extra storage 2", "Extra storage 3",
 };
 
@@ -82,10 +84,50 @@ const size_t inventory_size[] = {
 	15, 90, 10,
 	15, 90, 10,
 	15, 15, 36,
-	1500, 1500, 1500,
+	EXTRA_STORAGE_SIZE, EXTRA_STORAGE_SIZE, EXTRA_STORAGE_SIZE,
 };
 
 // Functions ------------------------------------
+
+void load_extra_storage() {
+	const char *town = town_name();
+
+	for(int i=0; i<3; i++) {
+		for(int j=0; j<EXTRA_STORAGE_SIZE; j++) {
+			extra_storage[i][j] = EMPTY_ITEM;
+		}
+
+		char buffer[40];
+		sprintf(buffer, "extra_%s_storage_%d.bin", town, i+1);
+		FILE *f = fopen(buffer, "rb");
+		if(f) {
+			if(fread(extra_storage[i], 1, sizeof(extra_storage[i]), f) != sizeof(extra_storage[i]))
+				popup_notice("Bad extra storage file?");
+			fclose(f);
+		}
+	}
+}
+
+void save_extra_storage() {
+	const char *town = town_name();
+
+	for(int i=0; i<3; i++) {
+		if(edited_extra_storage[i]) {
+			char buffer[40];
+			sprintf(buffer, "extra_%s_storage_%d.bin", town, i+1);
+			FILE *f = fopen(buffer, "wb");
+			if(f) {
+				if(fwrite(extra_storage[i], 1, sizeof(extra_storage[i]), f) != sizeof(extra_storage[i]))
+					popup_notice("Couldn't save storage file");
+				fclose(f);
+			} else {
+				popup_notice("Couldn't create storage file");
+			}
+
+			edited_extra_storage[i] = 0;
+		}
+	}
+}
 
 void set_savefile_u16(int index, u16 value) {
 	*((u16*)&savefile[index])= value;
@@ -99,35 +141,35 @@ u16 get_inventory_item(int inventory, int slot) {
 	if(slot > inventory_size[inventory])
 		return 0xffff; // Unavailable slot
 	switch(inventory) {
-		case 0:	 return get_savefile_u16(0x01B2E + 8844*0 + slot*2); // Inventory
-		case 1:  return get_savefile_u16(0x15430 + 180*0  + slot*2); // Closet
-		case 2:  return 0;
+		case 0:	 return get_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*0 + slot*2); // Inventory
+		case 1:  return get_savefile_u16(0x15430 + 180*0 + slot*2); // Closet
+		case 2:  return get_savefile_u16(0x01244 + PER_PLAYER_OFFSET*0 + slot*0xF4); // Mail
 
-		case 3:	 return get_savefile_u16(0x01B2E + 8844*1 + slot*2); // Inventory
-		case 4:  return get_savefile_u16(0x15430 + 180*1  + slot*2); // Closet
-		case 5:  return 0;
+		case 3:	 return get_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*1 + slot*2); // Inventory
+		case 4:  return get_savefile_u16(0x15430 + 180*1 + slot*2); // Closet
+		case 5:  return get_savefile_u16(0x01244 + PER_PLAYER_OFFSET*1 + slot*0xF4); // Mail
 
-		case 6:	 return get_savefile_u16(0x01B2E + 8844*2 + slot*2); // Inventory
-		case 7:  return get_savefile_u16(0x15430 + 180*2  + slot*2); // Closet
-		case 8:  return 0;
+		case 6:	 return get_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*2 + slot*2); // Inventory
+		case 7:  return get_savefile_u16(0x15430 + 180*2 + slot*2); // Closet
+		case 8:  return get_savefile_u16(0x01244 + PER_PLAYER_OFFSET*2 + slot*0xF4); // Mail
 
-		case 9:	 return get_savefile_u16(0x01B2E + 8844*3 + slot*2); // Inventory
-		case 10: return get_savefile_u16(0x15430 + 180*3  + slot*2); // Closet
-		case 11: return 0;
+		case 9:	 return get_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*3 + slot*2); // Inventory
+		case 10: return get_savefile_u16(0x15430 + 180*3 + slot*2); // Closet
+		case 11: return get_savefile_u16(0x01244 + PER_PLAYER_OFFSET*3 + slot*0xF4); // Mail
 
 		case 12: return get_savefile_u16(0x15EDE + slot*2); // Recycler
 		case 13: return get_savefile_u16(0x15EC0 + slot*2); // Lost and found
 		case 14: return get_savefile_u16(0x15DB8 + slot*2); // Shop
 
-		case 15: return extra_storage_1[slot];
-		case 16: return extra_storage_2[slot];
-		case 17: return extra_storage_3[slot];
+		case 15: return extra_storage[0][slot];
+		case 16: return extra_storage[1][slot];
+		case 17: return extra_storage[2][slot];
 	}
 	return INVALID_ITEM_SLOT;
 }
 
 void set_inventory_item(int inventory, int slot, u16 item) {
-	if(slot > inventory_size[inventory])
+	if(slot >= inventory_size[inventory])
 		return;
 	switch(inventory) {
 		case 0:	 set_savefile_u16(0x01B2E + 8844*0 + slot*2, item); break; // Inventory
@@ -150,9 +192,9 @@ void set_inventory_item(int inventory, int slot, u16 item) {
 		case 13: set_savefile_u16(0x15EC0 + slot*2, item); break; // Lost and found
 		case 14: set_savefile_u16(0x15DB8 + slot*2, item); break; // Shop
 
-		case 15: extra_storage_1[slot] = item; break;
-		case 16: extra_storage_2[slot] = item; break;
-		case 17: extra_storage_3[slot] = item; break;
+		case 15: extra_storage[0][slot] = item; edited_extra_storage[0] = true; break;
+		case 16: extra_storage[1][slot] = item; edited_extra_storage[1] = true; break;
+		case 17: extra_storage[2][slot] = item; edited_extra_storage[2] = true; break;
 	}
 }
 
@@ -213,34 +255,26 @@ void redraw_storage_screens() {
 
 void menu_storage() {
 	// Set up inventory names from the player names
-	const char *player_name;
-	player_name = text_from_save(0x228E + 8844*0, 8);
-	if(!player_name[0])
-		player_name = "Player 1";
-	sprintf(player_1_inventory_text, "\xC2%s's inventory", player_name);
-	sprintf(player_1_closet_text, "\xD2%s's closet", player_name);
-	sprintf(player_1_mail_text, "\xED%s's mail", player_name);
+	const char *name;
+	name = player_name(0);
+	sprintf(player_1_inventory_text, "\xC2%s's inventory", name);
+	sprintf(player_1_closet_text, "\xD2%s's closet", name);
+	sprintf(player_1_mail_text, "\xED%s's mail", name);
 
-	player_name = text_from_save(0x228E + 8844*1, 8);
-	if(!player_name[0])
-		player_name = "Player 2";
-	sprintf(player_2_inventory_text, "\xC2%s's inventory", player_name);
-	sprintf(player_2_closet_text, "\xD2%s's closet", player_name);
-	sprintf(player_2_mail_text, "\xED%s's mail", player_name);
+	name = player_name(1);
+	sprintf(player_2_inventory_text, "\xC2%s's inventory", name);
+	sprintf(player_2_closet_text, "\xD2%s's closet", name);
+	sprintf(player_2_mail_text, "\xED%s's mail", name);
 
-	player_name = text_from_save(0x228E + 8844*2, 8);
-	if(!player_name[0])
-		player_name = "Player 3";
-	sprintf(player_3_inventory_text, "\xC2%s's inventory", player_name);
-	sprintf(player_3_closet_text, "\xD2%s's closet", player_name);
-	sprintf(player_3_mail_text, "\xED%s's mail", player_name);
+	name = player_name(2);
+	sprintf(player_3_inventory_text, "\xC2%s's inventory", name);
+	sprintf(player_3_closet_text, "\xD2%s's closet", name);
+	sprintf(player_3_mail_text, "\xED%s's mail", name);
 
-	player_name = text_from_save(0x228E + 8844*3, 8);
-	if(!player_name[0])
-		player_name = "Player 4";
-	sprintf(player_4_inventory_text, "\xC2%s's inventory", player_name);
-	sprintf(player_4_closet_text, "\xD2%s's closet", player_name);
-	sprintf(player_4_mail_text, "\xED%s's mail", player_name);
+	name = player_name(3);
+	sprintf(player_4_inventory_text, "\xC2%s's inventory", name);
+	sprintf(player_4_closet_text, "\xD2%s's closet", name);
+	sprintf(player_4_mail_text, "\xED%s's mail", name);
 
 	// ------------------------------------------
 

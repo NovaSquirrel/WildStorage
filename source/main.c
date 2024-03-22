@@ -46,13 +46,14 @@
 // Prototypes
 void menu_storage();
 void menu_player_edit();
+void menu_miscellaneous();
+void load_extra_storage();
+void save_extra_storage();
 
 // ------------------------------------------------------------------------------------------------
 // Strings
 const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Miscellaneous", "Edit player", "Quit"};
 const char *file_options[] = {"Load file", "Save file", "Save backup"};
-const char *player_options[] = {"1st player", "2nd player", "3rd player", "4th player"};
-const char *misc_menu_options[] = {"Emotions", "Face/Hair"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -74,10 +75,14 @@ const char *text_from_save(int index, int length) {
 	return text_conversion_buffer;
 }
 
+const char *town_name() {
+	return text_from_save(4, 8);
+}
+
 void show_player_information() {
 	clear_screen(subBGMap);
 	map_print(subBGMap, 1, 1, full_file_path);
-	map_printf(subBGMap, 1, 2, "Town: %s", text_from_save(4, 8));
+	map_printf(subBGMap, 1, 2, "Town: %s",     town_name());
 	map_printf(subBGMap, 1, 3, "Player 1: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*0, 8));
 	map_printf(subBGMap, 1, 4, "Player 2: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*1, 8));
 	map_printf(subBGMap, 1, 5, "Player 3: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*2, 8));
@@ -95,6 +100,7 @@ int reload_savefile() {
 	}
 	if(success) {
 		show_player_information();
+		load_extra_storage();
 	}
 	return success;
 }
@@ -125,9 +131,9 @@ void menu_save_load() {
 	switch(choose_from_list("Save/Load", file_options, 3, 0)) {
 		case 0: // Load
 			if(choose_file() == 1) {
-				if(reload_savefile())
+				if(reload_savefile()) {
 					break;
-				else {
+				} else {
 					popup_notice("That isn't a valid savefile");
 				}
 			}		
@@ -140,6 +146,7 @@ void menu_save_load() {
 			fclose(file);
 			if(w == sizeof(savefile)) {
 				popup_notice("Saved successfully!");
+				save_extra_storage();
 			} else {
 				popup_notice("Unable to save");
 			}
@@ -182,19 +189,6 @@ void menu_house() {
 
 }
 
-void menu_miscellaneous() {
-
-}
-
-void menu_switch_player() {
-	/*
-	int result = choose_from_list("Which player?", player_options, 4, 0);
-	if(result >= 0)
-		current_player = result;
-	player_offset = current_player * 8844;
-	show_player_information();
-	*/
-}
 
 int main(int argc, char **argv) {
 	lcdMainOnBottom();

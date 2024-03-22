@@ -152,10 +152,10 @@ void edit_emotions() {
 	int emotion_slot = 0;
 
 	while(1) {
-		emotions[0] = emotions_options[savefile[player_offset + 0x021F8]];
-		emotions[1] = emotions_options[savefile[player_offset + 0x021F9]];
-		emotions[2] = emotions_options[savefile[player_offset + 0x021FA]];
-		emotions[3] = emotions_options[savefile[player_offset + 0x021FB]];
+		emotions[0] = emotions_options[(savefile[player_offset + 0x021F8] < 60) ? savefile[player_offset + 0x021F8] : 0];
+		emotions[1] = emotions_options[(savefile[player_offset + 0x021F9] < 60) ? savefile[player_offset + 0x021F9] : 0];
+		emotions[2] = emotions_options[(savefile[player_offset + 0x021FA] < 60) ? savefile[player_offset + 0x021FA] : 0];
+		emotions[3] = emotions_options[(savefile[player_offset + 0x021FB] < 60) ? savefile[player_offset + 0x021FB] : 0];
 
 		int result = choose_from_list("Which emotion slot?", emotions, 4, emotion_slot);
 		if(result < 0)
