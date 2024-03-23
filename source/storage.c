@@ -40,12 +40,15 @@ const char *text_from_save(int index, int length);
 int item_sort_compare(const void *a, const void *b);
 
 // Strings -----------------------------------
-const char *edit_item_options[] = {"Choose item", "Delete", "Copy", "Paste", "Sort this inventory"};
-// Put item ID in prompt so you can view it that way
+const char *edit_item_options[] = {"Choose item", "Choose item from category", "Delete", "Copy", "Paste", "Sort this inventory"};
+const char *edit_item_category_names[] = {"Furniture", "Shirts", "Hats", "Accessories", "Wallpaper", "Rugs", "Paper", "Flower bags & fruit", "Bugs", "Fish", "Fireworks", "Umbrellas", "Flowers", "Fossils", "Gyroids", "Animal pictures", "Mario items", "Bells"};
+const u16 edit_item_category_values[] = {0x3000, 0x11a8, 0x13a8, 0x1431, 0x1100, 0x1144, 0x1000, 0x14fe, 0x12b0, 0x12e8, 0x137c, 0x1380, 0x1408, 0x450c, 0x45dc, 0x45d8, 0x4b68, 0x1492};
 
 // Variables ------------------------------------
+// For "Edit item"
 int edit_type_index = 0;
 u16 edit_item_copy = EMPTY_ITEM;
+int edit_item_category = 0;
 
 int storage_y = 0;
 int storage_screen = 0;
@@ -99,13 +102,13 @@ void load_extra_storage() {
 	const char *town = town_name();
 
 	for(int i=0; i<3; i++) {
+		// Empty out the array first
 		for(int j=0; j<EXTRA_STORAGE_SIZE; j++) {
 			extra_storage[i][j] = EMPTY_ITEM;
 		}
 
-		char buffer[40];
-		sprintf(buffer, "extra_%s_storage_%d.bin", town, i+1);
-		FILE *f = fopen(buffer, "rb");
+		sprintf(full_file_path, "%sextra_%s_storage_%d.bin", acww_folder_prefix, town, i+1);
+		FILE *f = fopen(full_file_path, "rb");
 		if(f) {
 			if(fread(extra_storage[i], 1, sizeof(extra_storage[i]), f) != sizeof(extra_storage[i]))
 				popup_noticef("Bad extra storage file? %d", i+1);
@@ -119,9 +122,8 @@ void save_extra_storage() {
 
 	for(int i=0; i<3; i++) {
 		if(edited_extra_storage[i]) {
-			char buffer[40];
-			sprintf(buffer, "extra_%s_storage_%d.bin", town, i+1);
-			FILE *f = fopen(buffer, "wb");
+			sprintf(full_file_path, "%sextra_%s_storage_%d.bin", acww_folder_prefix, town, i+1);
+			FILE *f = fopen(full_file_path, "wb");
 			if(f) {
 				if(fwrite(extra_storage[i], 1, sizeof(extra_storage[i]), f) != sizeof(extra_storage[i]))
 					popup_noticef("Couldn't save storage file %d", i+1);
@@ -211,15 +213,15 @@ int sort_inventory(int inventory) {
 		case 2:  return -1;
 
 		case 3:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*1], 15, 2, item_sort_compare); break; // Inventory
-		case 4:  qsort(&savefile[0x15430 + 180*1], 90, 2, item_sort_compare); // Closet
+		case 4:  qsort(&savefile[0x15430 + 180*1], 90, 2, item_sort_compare); break; // Closet
 		case 5:  return -1;
 
 		case 6:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*2], 15, 2, item_sort_compare); break; // Inventory
-		case 7:  qsort(&savefile[0x15430 + 180*2], 90, 2, item_sort_compare); // Closet
+		case 7:  qsort(&savefile[0x15430 + 180*2], 90, 2, item_sort_compare); break; // Closet
 		case 8:  return -1;
 
 		case 9:	 qsort(&savefile[0x01B2E + PER_PLAYER_OFFSET*3], 15, 2, item_sort_compare); break; // Inventory
-		case 10: qsort(&savefile[0x15430 + 180*3], 90, 2, item_sort_compare); // Closet
+		case 10: qsort(&savefile[0x15430 + 180*3], 90, 2, item_sort_compare); break; // Closet
 		case 11: return -1;
 
 		case 12: qsort(&savefile[0x15EDE], 15, 2, item_sort_compare); break; // Recycler
@@ -430,7 +432,7 @@ void menu_storage() {
 
 			char buffer[32];
 			sprintf(buffer, "Edit: Item %.4x", initial_item);
-			int edit_type = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, buffer, edit_item_options, 5, edit_type_index);
+			int edit_type = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, buffer, edit_item_options, 6, edit_type_index);
 			if(edit_type >= 0) {
 				edit_type_index = edit_type;
 
@@ -443,16 +445,28 @@ void menu_storage() {
 						}
 						break;
 					}
-					case 1: // Delete
+					case 1: // Choose (with category)
+					{
+						int which_category = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, "Which category?", edit_item_category_names, 18, edit_item_category);
+						if(which_category >= 0) {
+							edit_item_category = which_category;
+							int new_item = choose_item_from_all_on_screen(storage_swap_screen ? mainBGMap : subBGMap, "Select an item to put here", edit_item_category_values[which_category]);
+							if(new_item >= 0) {
+								set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
+							}
+						}
+						break;
+					}
+					case 2: // Delete
 						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, EMPTY_ITEM);
 						break;
-					case 2: // Copy
+					case 3: // Copy
 						edit_item_copy = initial_item;
 						break;
-					case 3: // Paste
+					case 4: // Paste
 						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, edit_item_copy);
 						break;
-					case 4: // Sort this inventory
+					case 5: // Sort this inventory
 						if(sort_inventory(storage_screen_inventory[storage_screen]) == 1) {
 							popup_noticef_on_screen(storage_screen ? mainBGMap : subBGMap, "Sorted %s!", storage_inventory_names[storage_screen_inventory[storage_screen]]);
 						} else {

@@ -139,7 +139,7 @@ struct item {
   {0x005e, "pine tree size 3"},
   {0x005f, "pine tree size 4 (bush)"},
   {0x0060, "pine tree size 5"},
-  {0x0061, "pine tree size 6 (full grown)"},
+  {0x0061, "pine tree size 6(full grown)"},
   {0x0062, "pine stump size 1 (small)"},
   {0x0063, "pine stump size 2"},
   {0x0064, "pine stump size 3"},
@@ -3281,6 +3281,7 @@ struct item {
   {0xb002, "Snowman 2"},
   {0xb003, "Snowman 3"},
   {0xf030, "Area not available"},
+  {0xf031, "Area not available"},
   {0xfff1, "Empty"},
 };
 
@@ -3437,11 +3438,11 @@ unsigned short icon_for_item(unsigned short item_id) {
 		return ICON_PAPER;
 	if(item_id >= 0x1100 && item_id <= 0x1187) // Wallpaper and rugs
 		return ICON_ITEM;
-	if((item_id >= 0x11a8 && item_id <= 0x12a7) || (item_id >= 0x3984 && item_id <= 0x3da0))
+	if((item_id >= 0x11a8 && item_id <= 0x12a7) || (item_id >= 0x3984 && item_id <= 0x3da0+3))
 		return ICON_SHIRT;
-	if((item_id >= 0x12b0 && item_id <= 0x12e7) || (item_id >= 0x42a4 && item_id <= 0x4380))
+	if((item_id >= 0x12b0 && item_id <= 0x12e7) || (item_id >= 0x42a4 && item_id <= 0x4380+3))
 		return ICON_BUG;
-	if((item_id >= 0x12e8 && item_id <= 0x131f) || (item_id >= 0x4384 && item_id <= 0x4460))
+	if((item_id >= 0x12e8 && item_id <= 0x131f) || (item_id >= 0x4384 && item_id <= 0x4460+3))
 		return ICON_FISH;
 	if(item_id >= 0x1320 && item_id <= 0x1322)
 		return ICON_TRASH;
@@ -3451,13 +3452,13 @@ unsigned short icon_for_item(unsigned short item_id) {
 		return ICON_TOOL;
 	if(item_id >= 0x137c && item_id <= 0x137f)
 		return ICON_EXPLOSIVE;
-	if((item_id >= 0x1380 && item_id <= 0x13a7) || (item_id >= 0x3e24 && item_id <= 0x3ec0))
+	if((item_id >= 0x1380 && item_id <= 0x13a7) || (item_id >= 0x3e24 && item_id <= (0x3ec0+3)))
 		return ICON_UMBRELLA;
-	if((item_id >= 0x13a8 && item_id <= 0x1407) || (item_id >= 0x3fa4 && item_id <= 0x4120))
+	if((item_id >= 0x13a8 && item_id <= 0x1407) || (item_id >= 0x3fa4 && item_id <= (0x4120+3)))
 		return ICON_HAT;
-	if(item_id >= 0x1431 && item_id <= 0x1457)
+	if((item_id >= 0x1431 && item_id <= 0x1457) || (item_id >= 0x4124 && item_id <= (0x41bc+3)))
 		return ICON_GLASSES;
-	if((item_id >= 0x1408 && item_id <= 0x1428) || (item_id >= 01471 && item_id <= 0x1491))
+	if((item_id >= 0x1408 && item_id <= 0x1428) || (item_id >= 0x1471 && item_id <= 0x1491))
 		return ICON_FLOWER;
 	if(item_id >= 0x1492 && item_id <= 0x14fd)
 		return ICON_BELLS;
@@ -3475,7 +3476,7 @@ unsigned short icon_for_item(unsigned short item_id) {
 		return ICON_ACORN;
 	if(item_id == 0x1549)
 		return ICON_FOSSIL;
-	if((item_id >= 0x1554 && item_id <= 0x155c) || (item_id >= 0x44ec && item_id <= 0x4508))
+	if((item_id >= 0x1554 && item_id <= 0x155c) || (item_id >= 0x44ec && item_id <= (0x4508+3)))
 		return ICON_SHELL;
 	if(item_id == 0x155e || (item_id >= 0x1568 && item_id <= 0x6a)) // Medicine, UFO part, unused honey comb, unused 4 leaf clover
 		return ICON_ITEM;
@@ -3487,17 +3488,17 @@ unsigned short icon_for_item(unsigned short item_id) {
 		return ICON_FLOWERBAG;
 	if(item_id == 0x156b)
 		return ICON_PRESENT;
-	if(item_id >= 0x3000 && item_id <= 0x3980)
+	if(item_id >= 0x3000 && item_id <= (0x3980+3))
 		return ICON_FURNITURE;
-	if(item_id >= 0x4464 && item_id <= 0x44e8)
+	if(item_id >= 0x4464 && item_id <= (0x44e8+3))
 		return ICON_FLOWER;
-	if(item_id >= 0x450c && item_id <= 0x45d8)
+	if(item_id >= 0x450c && item_id <= (0x45d8+3))
 		return ICON_FOSSIL_ID;
-	if(item_id >= 0x45dc && item_id <= 0x47d4)
+	if(item_id >= 0x45dc && item_id <= (0x47d4+3))
 		return ICON_GYROID;
-	if(item_id >= 0x45d8 && item_id <= 0x4a44)
+	if(item_id >= 0x45d8 && item_id <= (0x4a44+3))
 		return ICON_PICTURE;
-	if(item_id >= 0x4a48 && item_id <= 0x4ba0) // Special/unused furniture
+	if(item_id >= 0x4a48 && item_id <= (0x4ba0+3)) // Special/unused furniture
 		return ICON_FURNITURE;
 	if(item_id >= 0x5000 && item_id <= 0x5021)
 		return ICON_BUILDING;
@@ -3518,8 +3519,14 @@ int item_comparator(const void *a, const void *b) {
 	return 0;
 }
 
+u16 strip_bottom_bits_on_furniture(u16 item) {
+	if(item >= 0x3000 && item <= 0x4fff)
+		return item & 0xfffc;
+	return item;
+}
+
 const char *name_for_item(unsigned short item_id) {
-	struct item find_me = {item_id};
+	struct item find_me = {strip_bottom_bits_on_furniture(item_id)};
 	struct item *found = (struct item*)bsearch(&find_me, item_list, sizeof(item_list) / sizeof(struct item), sizeof(struct item), item_comparator);
 	if(found) {
 		return found->name;
@@ -3532,12 +3539,12 @@ int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_ite
 	#define OPTIONS_START_Y 2
 
 	int current_choice = 0;
-	struct item find_me = {initial_item};
+	struct item find_me = {strip_bottom_bits_on_furniture(initial_item)};
+
 	struct item *found = (struct item*)bsearch(&find_me, item_list, sizeof(item_list) / sizeof(struct item), sizeof(struct item), item_comparator);
 	if(found) {
-		current_choice = (found - item_list) / sizeof(item_list);
+		current_choice = (found - item_list); // Don't need to divide by size because of pointer arithmetic rules?
 	}
-
 	clear_screen(map);
 	bool redraw_page = 1;
 	int page_number;

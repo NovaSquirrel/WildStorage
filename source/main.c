@@ -32,6 +32,7 @@
 */
 
 #include <errno.h>
+#include <sys/stat.h> // For mkdir
 #include <stdio.h>
 #include <stdarg.h>
 #include <fatfs.h>
@@ -53,15 +54,20 @@ void save_extra_storage();
 // ------------------------------------------------------------------------------------------------
 // Strings
 const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Utilities", "Edit player", "Quit"};
-const char *file_options[] = {"Load file", "Save file", "Save backup"};
+const char *file_options[] = {"Load file", "Save file", "Save backup", "Load from cartridge", "Save to cartridge"};
+const char *title_screen_options[] = {"Load from SD card", "Load from cartridge", "Quit"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
 
+char filename[200];
 char full_file_path[256];
 char title_buffer[32];
 char text_conversion_buffer[40];
 u8 savefile[256 * 1024];
+
+bool has_acww_folder;
+const char *acww_folder_prefix = "";
 
 u16 *mainBGMap;
 u16 *mainBGMap2;
@@ -90,19 +96,29 @@ void show_player_information() {
 	//map_printf(subBGMap, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
 }
 
-int reload_savefile() {
-	FILE *file = fopen(full_file_path, "rb");
-	size_t r = fread(savefile, 1, sizeof(savefile), file);
-	fclose(file);
-	int success = r == sizeof(savefile);
+int verify_loaded_savefile() {
 	if(memcmp(savefile+2, savefile+2+TOWN_SAVE_SIZE, 10) != 0) { // Name of the town should be the same between both copies of the town
+		popup_notice("That isn't a valid savefile");
 		return 0;
 	}
-	if(success) {
-		show_player_information();
-		load_extra_storage();
+	show_player_information();
+	load_extra_storage();
+	return 1;
+}
+
+int reload_savefile() {
+	FILE *file = fopen(filename, "rb");
+	if(file == NULL) {
+		popup_notice("Can't open savefile");
+		return 0;
 	}
-	return success;
+	size_t r = fread(savefile, 1, sizeof(savefile), file);
+	fclose(file);
+	if(r != sizeof(savefile)) {
+		popup_notice("That isn't a valid savefile");
+		return 0;
+	}
+	return verify_loaded_savefile();
 }
 
 void wait_for_start() {
@@ -127,21 +143,58 @@ void fix_checksum() {
 	memcpy(savefile + TOWN_SAVE_SIZE, savefile, TOWN_SAVE_SIZE);
 }
 
+int verify_cartridge_flash_type() {
+	int type = cardEepromGetType();
+	if(type == 3) {
+		if(cardEepromGetSize() == sizeof(savefile)) {
+			return 1;
+		}
+		popup_notice("Cartridge's save isn't 256K");
+	} else {
+		popup_notice("Cartridge doesn't have flash");
+	}
+	return 0;
+}
+
+int load_cartridge() {
+	if(!verify_cartridge_flash_type())
+		return 0;
+	cardReadEeprom(0, savefile, sizeof(savefile), 3); // 3 = flash
+	return verify_loaded_savefile();
+}
+
+int save_cartridge() {
+	if(!verify_cartridge_flash_type())
+		return 0;
+	fix_checksum();
+	cardEepromChipErase();
+	cardWriteEeprom(0, savefile, sizeof(savefile), 3); // 3 = flash
+	return 1;
+}
+
+void get_backup_filename() {
+	time_t timer;
+	struct tm* tm_info;
+	char buffer[60];
+
+	// Create a file with the current date and time on it
+	timer = time(NULL);
+	tm_info = localtime(&timer);
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H-%M.sav", tm_info);
+	sprintf(full_file_path, "%s%s %s", acww_folder_prefix, town_name(), buffer);
+}
+
 void menu_save_load() {
-	switch(choose_from_list("Save/Load", file_options, 3, 0)) {
+	switch(choose_from_list("Save/Load", file_options, 5, 0)) {
 		case 0: // Load
 			if(choose_file() == 1) {
-				if(reload_savefile()) {
-					break;
-				} else {
-					popup_notice("That isn't a valid savefile");
-				}
+				reload_savefile();
 			}		
 			break;
 		case 1: // Save
 		{
 			fix_checksum();
-			FILE *file = fopen(full_file_path, "wb");
+			FILE *file = fopen(filename, "wb");
 			size_t w = fwrite(savefile, 1, sizeof(savefile), file);
 			fclose(file);
 			if(w == sizeof(savefile)) {
@@ -155,16 +208,9 @@ void menu_save_load() {
 		case 2: // Save backup
 		{
 			fix_checksum();
-			time_t timer;
-			struct tm* tm_info;
-			char buffer[64];
 
-			// Create a file with the current date and time on it
-			timer = time(NULL);
-			tm_info = localtime(&timer);
-			strftime(buffer, sizeof(buffer), "ACWW %Y-%m-%d %H-%M.sav", tm_info);
-
-			FILE *file = fopen(buffer, "wb");
+			get_backup_filename();
+			FILE *file = fopen(full_file_path, "wb");
 			size_t w = fwrite(savefile, 1, sizeof(savefile), file);
 			fclose(file);
 			if(w == sizeof(savefile)) {
@@ -174,6 +220,16 @@ void menu_save_load() {
 			}
 			break;
 		}
+		case 3: // Load from cartridge
+			if(confirm_choice("Load from cartridge?") == 1 && load_cartridge()) {
+				popup_notice("Loaded from cartridge!");
+			}
+			break;
+		case 4: // Save to cartridge
+			if(confirm_choice("Save to cartridge?") == 1 && save_cartridge()) {
+				popup_notice("Saved to cart! Hopefully");
+			}
+			break;
 	}
 }
 
@@ -189,6 +245,15 @@ void menu_house() {
 
 }
 
+int makeFolder(const char *path) {
+	// from RAC by PinoBatch
+	if(mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
+		if(errno != EEXIST) {
+			return -1;
+		} 
+	}
+	return 0;
+}
 
 int main(int argc, char **argv) {
 	lcdMainOnBottom();
@@ -239,24 +304,57 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
+	// Create ACWW folder
+    has_acww_folder = makeFolder("/data") >= 0 && makeFolder("/data/acww") >= 0;
+	if(has_acww_folder) {
+		acww_folder_prefix = "/data/acww/";
+	}
+
 	// --------------------------------------------------------------
-	while(1) {
-		int result = choose_file();
-		if(result == -2) {
-			map_print(mainBGMap,  0, 0, "opendir() error");
-			map_print(mainBGMap,  0, 1, "Push start to exit...");
-			wait_for_start();
-			return 0;
-		}
-		if(result == 1) { // Success
-			if(reload_savefile())
+	// "Title screen"
+	clear_screen(subBGMap);
+	map_box(subBGMap, 0, 9, 32, 6);
+	map_print(subBGMap,  1, 10, "WildStorage");
+	map_print(subBGMap,  1, 11, "An ACWW item storage tool");
+	map_print(subBGMap,  1, 13, "made by NovaSquirrel");
+	map_print(subBGMap,  1, 20, "Version 0.0.1");
+
+	int title_screen_y = 0;
+	bool proceed_from_title_screen = 0;
+	while(!proceed_from_title_screen) {
+		int new_title_screen_y = choose_from_list("WildStorage", title_screen_options, 3, title_screen_y);
+		if(new_title_screen_y < 0)
+			continue;
+		title_screen_y = new_title_screen_y;
+		switch(title_screen_y) {
+			case 0: // Load SD card
+			{
+				int result = choose_file();
+				if(result == -2) {
+					map_print(mainBGMap,  0, 0, "opendir() error");
+					map_print(mainBGMap,  0, 1, "Push start to exit...");
+					wait_for_start();
+					return 0;
+				}
+				if(result == 1) { // Success
+					if(reload_savefile())
+						proceed_from_title_screen = 1;
+				}
 				break;
-			else {
-				popup_notice("That isn't a valid savefile");
 			}
+			case 1: // Load cartridge
+			{
+				if(load_cartridge()) {
+					proceed_from_title_screen = 1;
+				}
+				break;
+			}
+			case 2: // quit
+				return 0;
 		}
 	}
 
+	// Main menu
 	int main_menu_y = 0;
 	while(1) {
 		sprintf(title_buffer, "Main menu");

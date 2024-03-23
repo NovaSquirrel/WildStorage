@@ -1,12 +1,14 @@
 #include <nds.h>
 #include <stdarg.h>
 
+extern char filename[200];
 extern char full_file_path[256];
 extern char title_buffer[32];
 extern char text_conversion_buffer[40];
 extern int current_player;
 extern int player_offset;
 extern u8 savefile[256 * 1024];
+extern const char *acww_folder_prefix;
 
 extern u16 *mainBGMap;
 extern u16 *mainBGMap2;

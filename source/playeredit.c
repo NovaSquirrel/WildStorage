@@ -53,7 +53,7 @@ const char *face_options[] = {
 	"F Blue Eyes + Eyelids",
 	"F Green Oval Eyes w/ Lashes",
 	"F Brown Arch+Lash",
-	"F Blue Eyes"
+	"F Blue Eyes",
 	"F Green Circle Eyes+Lashes"
 };
 

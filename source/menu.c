@@ -263,7 +263,7 @@ int choose_file() {
 				if(cur->d_type == DT_DIR) {
 					chdir(cur->d_name);
 				} else {
-					strlcpy(full_file_path, cur->d_name, sizeof(full_file_path));
+					strlcpy(filename, cur->d_name, sizeof(filename));
 					return_code = 1;
 				}
 			}
