@@ -87,7 +87,7 @@ const char *town_name() {
 
 void show_player_information() {
 	clear_screen(subBGMap);
-	map_print(subBGMap, 1, 1, full_file_path);
+	map_print(subBGMap, 1, 1, filename);
 	map_printf(subBGMap, 1, 2, "Town: %s",     town_name());
 	map_printf(subBGMap, 1, 3, "Player 1: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*0, 8));
 	map_printf(subBGMap, 1, 4, "Player 2: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*1, 8));
