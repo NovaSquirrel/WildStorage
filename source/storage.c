@@ -41,8 +41,8 @@ int item_sort_compare(const void *a, const void *b);
 
 // Strings -----------------------------------
 const char *edit_item_options[] = {"Choose item", "Choose item from category", "Delete", "Copy", "Paste", "Sort this inventory"};
-const char *edit_item_category_names[] = {"Furniture", "Shirts", "Hats", "Accessories", "Wallpaper", "Rugs", "Paper", "Flower bags & fruit", "Bugs", "Fish", "Fireworks", "Umbrellas", "Flowers", "Fossils", "Gyroids", "Animal pictures", "Mario items", "Bells"};
-const u16 edit_item_category_values[] = {0x3000, 0x11a8, 0x13a8, 0x1431, 0x1100, 0x1144, 0x1000, 0x14fe, 0x12b0, 0x12e8, 0x137c, 0x1380, 0x1408, 0x450c, 0x45dc, 0x45d8, 0x4b68, 0x1492};
+const char *edit_item_category_names[] = {"Furniture", "Shirts", "Hats", "Accessories", "Wallpaper", "Rugs", "Paper", "Flower bags & fruit", "Bugs", "Fish", "Fireworks", "Umbrellas & tools", "Flowers", "Fossils", "Gyroids", "Animal pictures", "Mario items", "Bells"};
+const u16 edit_item_category_values[] = {0x3000, 0x11a8, 0x13a8, 0x1431, 0x1100, 0x1144, 0x1000, 0x14fe, 0x12b0, 0x12e8, 0x137c, 0x1380, 0x1408, 0x450c, 0x45dc, 0x47d8, 0x4b68, 0x1492};
 
 // Variables ------------------------------------
 // For "Edit item"

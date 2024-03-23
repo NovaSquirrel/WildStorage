@@ -3361,7 +3361,7 @@ Item ranges:
 44ec-4508 Seashells as furniture
 450c-45d8 Fossils
 45dc-47d4 Gyroids
-45d8-4a44 Pictures
+47d8-4a44 Pictures
 4a48-4a64 Unused furniture
 4a68-4b64 Unused paper previews
 4b68-4ba0 Mario/Nintendo items
@@ -3496,7 +3496,7 @@ unsigned short icon_for_item(unsigned short item_id) {
 		return ICON_FOSSIL_ID;
 	if(item_id >= 0x45dc && item_id <= (0x47d4+3))
 		return ICON_GYROID;
-	if(item_id >= 0x45d8 && item_id <= (0x4a44+3))
+	if(item_id >= 0x47d8 && item_id <= (0x4a44+3))
 		return ICON_PICTURE;
 	if(item_id >= 0x4a48 && item_id <= (0x4ba0+3)) // Special/unused furniture
 		return ICON_FURNITURE;
