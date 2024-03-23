@@ -36,7 +36,7 @@
 
 // ------------------------------------------------------------------------------------------------
 // Strings
-const char *utility_options[] = {"Remove weeds", "Revive all flowers", "Water all flowers", "Replenish fruit", "Un-bury items", "Remove stray items", "Sort closets", "Sort extra storage"};
+const char *utility_options[] = {"No Resetti", "Remove weeds", "Revive all flowers", "Water all flowers", "Replenish fruit", "Un-bury items", "Remove stray items", "Sort closets", "Sort extra storage"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -56,13 +56,20 @@ void menu_utility() {
 	static int which_option = 0;
 
 	while(1) {
-		int option = choose_from_list("Utility features", utility_options, 8, which_option);
+		int option = choose_from_list("Utility features", utility_options, 9, which_option);
 		if(option < 0)
 			return;
 		which_option = option;
 
 		switch(which_option) {
-			case 0: // Remove weeds
+			case 0: // No resetti
+				savefile[0x2208 + PER_PLAYER_OFFSET * 0] &= ~4;
+				savefile[0x2208 + PER_PLAYER_OFFSET * 1] &= ~4;
+				savefile[0x2208 + PER_PLAYER_OFFSET * 2] &= ~4;
+				savefile[0x2208 + PER_PLAYER_OFFSET * 3] &= ~4;
+				popup_notice("Resetti flag cleared");
+				break;
+			case 1: // Remove weeds
 			{
 				int weeds = 0;
 				for(int i=0x0C354; i<=0x0E352; i+=2) {
@@ -75,7 +82,7 @@ void menu_utility() {
 				popup_noticef("Removed %d weeds", weeds);
 				break;
 			}
-			case 1: // Revive flowers
+			case 2: // Revive flowers
 			{
 				int flowers = 0, flowers2 = 0;
 				for(int i=0x0C354; i<=0x0E352; i+=2) {
@@ -92,7 +99,7 @@ void menu_utility() {
 				popup_noticef("%d flowers (%d were watered)", flowers, flowers2);
 				break;
 			}
-			case 2: // Water flowers
+			case 3: // Water flowers
 			{
 				int flowers = 0;
 				for(int i=0x0C354; i<=0x0E352; i+=2) {
@@ -106,7 +113,7 @@ void menu_utility() {
 				popup_noticef("Watered %d flowers", flowers);
 				break;
 			}
-			case 3: // Replenish fruit
+			case 4: // Replenish fruit
 			{
 				int fruit = 0;
 				for(int i=0x0C354; i<=0x0E352; i+=2) {
@@ -136,7 +143,7 @@ void menu_utility() {
 				popup_noticef("Restocked %d trees", fruit);
 				break;
 			}
-			case 4: // Un-bury items
+			case 5: // Un-bury items
 			{
 				int buried = 0;
 				for(int i=0x0E354; i<=0x0E553; i++) {
@@ -151,7 +158,7 @@ void menu_utility() {
 				popup_noticef("Un-buried %d items", buried);
 				break;
 			}
-			case 5: // Remove stray items
+			case 6: // Remove stray items
 			{
 				int stray = 0;
 				for(int i=0x0C354; i<=0x0E352; i+=2) {
@@ -164,14 +171,14 @@ void menu_utility() {
 				popup_noticef("Removed %d stray items", stray);
 				break;
 			}
-			case 6: // Sort closets
+			case 7: // Sort closets
 				qsort(&savefile[0x15430 + 180*0], 90, 2, item_sort_compare);
 				qsort(&savefile[0x15430 + 180*1], 90, 2, item_sort_compare);
 				qsort(&savefile[0x15430 + 180*2], 90, 2, item_sort_compare);
 				qsort(&savefile[0x15430 + 180*3], 90, 2, item_sort_compare);
 				popup_notice("Sorted all players' closets");
 				break;
-			case 7: // Sort extra storage				
+			case 8: // Sort extra storage				
 				qsort(extra_storage[0], EXTRA_STORAGE_SIZE, 2, item_sort_compare);
 				qsort(extra_storage[1], EXTRA_STORAGE_SIZE, 2, item_sort_compare);
 				qsort(extra_storage[2], EXTRA_STORAGE_SIZE, 2, item_sort_compare);
