@@ -34,10 +34,12 @@ void map_print(u16 *map, int x, int y, const char *text);
 void map_printf(u16 *map, int x, int y, const char *fmt, ...);
 void map_box(u16 *map, int x, int y, int w, int h);
 void map_put(u16 *map, int x, int y, u16 c);
+void map_rectfill(u16 *map, int x, int y, int w, int h, u16 c);
 int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice);
 int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choices, int choice_count, int current_choice);
 int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item);
 void wait_for_start();
+void wait_vblank_and_animate();
 
 const char *name_for_item(unsigned short item_id);
 unsigned short icon_for_item(unsigned short item_id);

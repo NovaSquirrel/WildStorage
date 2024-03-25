@@ -331,7 +331,7 @@ void menu_storage() {
 	redraw_storage_screens();
 
 	while(1) {
-		swiWaitForVBlank();
+		wait_vblank_and_animate();
 		scanKeys();
 
 		// Respond to button presses

@@ -85,25 +85,25 @@ print("};")
 */
 
 #define PATTERN_SHARED_COLOR_COUNT 168
-#define PATTERN_SHARED_COLOR_STARTS_AT 16
+#define PATTERN_SHARED_COLOR_STARTS_AT 32
 
 const unsigned char  pattern_map_to_shared[] = {
-  0,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,
-  0,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  29,  30,
-  0,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  29,  30,
-  0,  57,  58,  59,  60,  61,  62,  24,  63,  64,  25,  65,  66,  67,  68,  30,
-  0,  69,  70,  71,  72,  73,  74,  27,  75,  76,  77,  78,  79,  80,  81,  30,
-  0,  16,  82,  83,  84,  81,  85,  86,  77,  64,  87,  88,  89,  90,  29,  30,
-  0,  22,  91,  92,  93,  25,  94,  95,  96,  16,  97,  98,  99,  90,  29,  30,
-  0, 100, 101, 102, 103,  81, 104, 105, 106, 107, 108, 109, 110,  90,  29,  30,
-  0,  25,  16,  19,  94,  97, 111,  95,  98, 112,  96,  99, 113,  90,  29,  30,
-  0,  22,  25,  28,  91,  94, 114,  92,  95, 115,  93,  96, 116,  90,  29,  30,
-  0,  16, 117,  19, 118,  22, 119,  25, 120, 121, 107, 122, 123,  90,  29,  30,
-  0, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137,  30,
-  0, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147,  19, 148, 149,  29,  30,
-  0,  30, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163,
-  0,  30, 164, 165, 166, 167, 168, 169, 170,  90, 171, 172, 173, 174, 175,  29,
-  0, 176,  16, 117,  19, 177,  22,  25, 178, 179, 180, 181, 182, 183,  29,  30,
+  0,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,
+  0,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  45,  46,
+  0,  60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  45,  46,
+  0,  73,  74,  75,  76,  77,  78,  40,  79,  80,  41,  81,  82,  83,  84,  46,
+  0,  85,  86,  87,  88,  89,  90,  43,  91,  92,  93,  94,  95,  96,  97,  46,
+  0,  32,  98,  99, 100,  97, 101, 102,  93,  80, 103, 104, 105, 106,  45,  46,
+  0,  38, 107, 108, 109,  41, 110, 111, 112,  32, 113, 114, 115, 106,  45,  46,
+  0, 116, 117, 118, 119,  97, 120, 121, 122, 123, 124, 125, 126, 106,  45,  46,
+  0,  41,  32,  35, 110, 113, 127, 111, 114, 128, 112, 115, 129, 106,  45,  46,
+  0,  38,  41,  44, 107, 110, 130, 108, 111, 131, 109, 112, 132, 106,  45,  46,
+  0,  32, 133,  35, 134,  38, 135,  41, 136, 137, 123, 138, 139, 106,  45,  46,
+  0, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153,  46,
+  0, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163,  35, 164, 165,  45,  46,
+  0,  46, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
+  0,  46, 180, 181, 182, 183, 184, 185, 186, 106, 187, 188, 189, 190, 191,  45,
+  0, 192,  32, 133,  35, 193,  38,  41, 194, 195, 196, 197, 198, 199,  45,  46,
 };
 
 const unsigned short pattern_shared_colors[] __attribute__((aligned(4))) = {
@@ -149,8 +149,8 @@ int pattern_select_y;
 // ------------------------------------------------------------------------------------------------
 // Functions
 
-void clear_screen_256() {
-	dmaFillHalfWords(0, mainBGMap256, 32*32*2);
+void clear_screen_256(u16 *map) {
+	dmaFillHalfWords(0, map, 32*32*2);
 }
 
 void copy_pattern_to_vram(struct acww_pattern *pattern, u16 *vram) {
@@ -191,38 +191,56 @@ void draw_selection_box_at(u16 *map, int x, int y) {
 	map_put(mainBGMapText,   x+2, y+3, TILE_SELECTION_BOX_TOP | TILE_FLIP_V);
 	map_put(mainBGMapText,   x+3, y+3, TILE_SELECTION_BOX_TOP_LEFT | TILE_FLIP_H | TILE_FLIP_V);
 }
-void erase_selection_box_at(u16 *map, int base_x, int base_y) {
-	for(int y=0; y<4; y++) {
-		for(int x=0; x<4; x++) {
-			map[(y+base_y)*32+(x+base_x)] = ' ';
-		}
-	}
+
+void redraw_pattern_manager_bottom_screen() {
+
 }
 
 void menu_patterns() {
 	pattern_select_x = 0;
 	pattern_select_y = 0;
+	bool first_draw = true;
 
 	clear_screen(mainBGMapText);
 	clear_screen(subBGMapText);
-	clear_screen_256();
+	clear_screen_256(mainBGMap256);
+	clear_screen_256(subBGMap256);
 
-	u16 *chr = bgGetGfxPtr(mainBG256);
+	u16 *topChr    = bgGetGfxPtr(subBG256);
+	u16 *bottomChr = bgGetGfxPtr(mainBG256);
 
+	// Bottom screen: patterns in the savefile
 	for(int player=0; player<4; player++) {
 		map_print(mainBGMapText, 1, 6*player, player_name(player));
 		for(int pattern=0; pattern<8; pattern++) {
 			int vram_index = player*8+pattern+1;
 			pattern_tiles_at(mainBGMap256, 4*pattern, 6*player+1, 16*vram_index);
-			copy_pattern_to_vram((struct acww_pattern*)&savefile[0x0000C + sizeof(struct acww_pattern)*pattern + PER_PLAYER_OFFSET*player], chr+512*vram_index);
+			copy_pattern_to_vram((struct acww_pattern*)&savefile[0x0000C + sizeof(struct acww_pattern)*pattern + PER_PLAYER_OFFSET*player], bottomChr+512*vram_index);
 		}
 	}
-//	copy_pattern_to_vram((struct acww_pattern*)&savefile[0x15930], chr+512*5);
 
-	dmaCopy(pattern_shared_colors,   BG_PALETTE+PATTERN_SHARED_COLOR_STARTS_AT, sizeof(pattern_shared_colors));
+	// Top screen: external patterns
+	for(int player=0; player<4; player++) {
+		for(int pattern=0; pattern<8; pattern++) {
+			int vram_index = player*8+pattern+1;
+			pattern_tiles_at(subBGMap256, 4*pattern, 5*player+1, 16*vram_index);
+			copy_pattern_to_vram((struct acww_pattern*)&savefile[0x0000C + sizeof(struct acww_pattern)*pattern + PER_PLAYER_OFFSET*0], topChr+512*vram_index);
+		}
+	}
 
+	dmaCopy(pattern_shared_colors,   BG_PALETTE+PATTERN_SHARED_COLOR_STARTS_AT,     sizeof(pattern_shared_colors));
+	dmaCopy(pattern_shared_colors,   BG_PALETTE_SUB+PATTERN_SHARED_COLOR_STARTS_AT, sizeof(pattern_shared_colors));
+
+	map_box(subBGMapText,  0,  20, 32, 4);
+//	map_print(subBGMapText, 1, 1,  "Pattern manager");
+//	map_print(subBGMapText, 1, 2, "\xe0:Move \xe1:Jump \xe2:Menu \xe3:????");
+	map_print(subBGMapText, 1, 0, "\xe0:Move \xe1:Jump \xe2:Menu \xe3:????");
+
+	// ------------------------------------------
+
+	// UI loop
 	while(1) {
-		swiWaitForVBlank();
+		wait_vblank_and_animate();
 		scanKeys();
 
 		uint32_t keys_down = keysDown();
@@ -244,10 +262,24 @@ void menu_patterns() {
 		if(keys_repeat & KEY_RIGHT) {
 			pattern_select_x = (pattern_select_x+1)&7;
 		}
-		if(pattern_select_x != old_pattern_select_x || pattern_select_y != old_pattern_select_y) {
+		if(first_draw || pattern_select_x != old_pattern_select_x || pattern_select_y != old_pattern_select_y) {
 			map_put(mainBGMapText,   old_pattern_select_x*4+1, 6*old_pattern_select_y+5, ' ');
 			map_put(mainBGMapText,   old_pattern_select_x*4+2, 6*old_pattern_select_y+5, ' ');
-			erase_selection_box_at(mainBGMapText, old_pattern_select_x*4, 6*old_pattern_select_y+1);
+			map_rectfill(mainBGMapText, old_pattern_select_x*4, 6*old_pattern_select_y+1, 4, 4, ' ');
+
+			map_rectfill(subBGMapText, 1, 21, 30, 2, ' ');
+			struct acww_pattern *pattern = (struct acww_pattern*)&savefile[0x0000C + sizeof(struct acww_pattern)*pattern_select_x + PER_PLAYER_OFFSET*pattern_select_y];
+
+			acstrDecode(text_conversion_buffer, pattern->pattern_name, 16);
+			map_print(subBGMapText, 1, 21, text_conversion_buffer);
+
+			acstrDecode(text_conversion_buffer, pattern->author.name, 8);
+			map_print(subBGMapText, 1, 22, text_conversion_buffer);
+
+			acstrDecode(text_conversion_buffer, pattern->author_town.name, 8);
+			map_print(subBGMapText, 16, 22, text_conversion_buffer);
+
+			first_draw = true;
 		}
 		map_put(mainBGMapText,   pattern_select_x*4+1, 6*pattern_select_y+5, TILE_VERTICAL_PICKER_L);
 		map_put(mainBGMapText,   pattern_select_x*4+2, 6*pattern_select_y+5, TILE_VERTICAL_PICKER_R);
@@ -258,5 +290,6 @@ void menu_patterns() {
 			break;
 	}
 
-	clear_screen_256();
+	clear_screen_256(mainBGMap256);
+	clear_screen_256(subBGMap256);
 }

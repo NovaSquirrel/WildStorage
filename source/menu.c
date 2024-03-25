@@ -41,6 +41,12 @@ void clear_screen(u16 *screen) {
 	dmaFillHalfWords(' ', screen, 32*32*2);
 }
 
+void map_rectfill(u16 *map, int x, int y, int w, int h, u16 c) {
+	for(int i=0; i<h; i++)
+		for(int j=0; j<w; j++)
+			map[(y+i)*32+x+j] = c;
+}
+
 void map_put(u16 *map, int x, int y, u16 c) {
 	map[y * 32 + x] = c;
 }
@@ -111,7 +117,7 @@ int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choice
 			redraw_page = 0;
 		}
 
-		swiWaitForVBlank();
+		wait_vblank_and_animate();
 		scanKeys();
 
 		// Respond to button presses

@@ -38,10 +38,12 @@
 #include <fatfs.h>
 #include <nds.h>
 #include <nds/arm9/dldi.h>
-#include <my_font.h>
 #include <time.h>
 #include "wild.h"
 #include "acstr.h"
+
+#include <my_font.h>
+#include <background.h>
 
 // ------------------------------------------------------------------------------------------------
 // Prototypes
@@ -51,7 +53,7 @@ void menu_utility();
 void menu_patterns();
 void load_extra_storage();
 void save_extra_storage();
-void clear_screen_256();
+void clear_screen_256(u16 *map);
 
 // ------------------------------------------------------------------------------------------------
 // Strings
@@ -126,9 +128,25 @@ int reload_savefile() {
 	return verify_loaded_savefile();
 }
 
+int background_scroll = 0;
+void wait_vblank_and_animate() {
+	swiWaitForVBlank();
+	background_scroll++;
+	int background_scroll_slower = background_scroll / 8;
+	bgSetScroll(mainBGBehind, background_scroll_slower, background_scroll_slower);
+	bgSetScroll(subBGBehind,  background_scroll_slower, background_scroll_slower);
+	bgUpdate();
+}
+
+void setup_scrolling_background(u16 *map) {
+	for(int i=0; i<1024; i++) {
+		map[i] = (i & 3) | (((i / 32) & 3) * 4) | TILE_PALETTE(1);
+	}
+}
+
 void wait_for_start() {
 	while(1) {
-		swiWaitForVBlank();
+		wait_vblank_and_animate();
 		scanKeys();
 		uint32_t keys_down = keysDown();
 		if(keys_down & KEY_START)
@@ -274,28 +292,34 @@ int main(int argc, char **argv) {
 	videoSetMode(MODE_0_2D);
 	mainBGText   = bgInit(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
 	mainBG256    = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
-	mainBGBehind = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 4, 7);
+	mainBGBehind = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
 
 	videoSetModeSub(MODE_0_2D);
 	subBGText    = bgInitSub(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
 	subBG256     = bgInitSub(1, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
-	subBGBehind  = bgInitSub(2, BgType_Text4bpp, BgSize_T_256x512, 4, 7);
+	subBGBehind  = bgInitSub(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
 
     mainBGMapText   = (u16*)bgGetMapPtr(mainBGText);
     mainBGMap256    = (u16*)bgGetMapPtr(mainBG256);
     mainBGMapBehind = (u16*)bgGetMapPtr(mainBGBehind);
     subBGMapText    = (u16*)bgGetMapPtr(subBGText);
-    subBGMap256     = (u16*)bgGetMapPtr(subBGText);
+    subBGMap256     = (u16*)bgGetMapPtr(subBG256);
     subBGMapBehind  = (u16*)bgGetMapPtr(subBGBehind);
 
-	dmaCopy(my_fontTiles, bgGetGfxPtr(mainBGText)  ,sizeof(my_fontTiles));
-	dmaFillHalfWords(0,   bgGetGfxPtr(mainBG256), 64);
-	dmaCopy(my_fontTiles, bgGetGfxPtr(mainBGBehind),sizeof(my_fontTiles));
-	dmaCopy(my_fontTiles, bgGetGfxPtr(subBGText),   sizeof(my_fontTiles));
-	dmaCopy(my_fontTiles, bgGetGfxPtr(subBGBehind), sizeof(my_fontTiles));
-	dmaCopy(my_fontPal,   BG_PALETTE,               sizeof(my_fontPal));
-	dmaCopy(my_fontPal,   BG_PALETTE_SUB,           sizeof(my_fontPal));
-	clear_screen_256();
+	dmaCopy(my_fontTiles,    bgGetGfxPtr(mainBGText)  ,sizeof(my_fontTiles));
+	dmaFillHalfWords(0,      bgGetGfxPtr(mainBG256),   64);
+	dmaCopy(backgroundTiles, bgGetGfxPtr(mainBGBehind),sizeof(backgroundTiles));
+	dmaCopy(my_fontTiles,    bgGetGfxPtr(subBGText),   sizeof(my_fontTiles));
+	dmaFillHalfWords(0,      bgGetGfxPtr(subBG256),    64);
+	dmaCopy(backgroundTiles, bgGetGfxPtr(subBGBehind), sizeof(backgroundTiles));
+	dmaCopy(my_fontPal,      BG_PALETTE,               sizeof(my_fontPal));
+	dmaCopy(my_fontPal,      BG_PALETTE_SUB,           sizeof(my_fontPal));
+	dmaCopy(backgroundPal,   BG_PALETTE+16,            sizeof(backgroundPal));
+	dmaCopy(backgroundPal,   BG_PALETTE_SUB+16,        sizeof(backgroundPal));
+	clear_screen_256(mainBGMap256);
+	clear_screen_256(subBGMap256);
+	setup_scrolling_background(mainBGMapBehind);
+	setup_scrolling_background(subBGMapBehind);
 
     setBrightness(3, 0); // Both screens full brightness
 
