@@ -48,8 +48,10 @@
 void menu_storage();
 void menu_player_edit();
 void menu_utility();
+void menu_patterns();
 void load_extra_storage();
 void save_extra_storage();
+void clear_screen_256();
 
 // ------------------------------------------------------------------------------------------------
 // Strings
@@ -69,10 +71,13 @@ u8 savefile[256 * 1024];
 bool has_acww_folder;
 const char *acww_folder_prefix = "";
 
-u16 *mainBGMap;
-u16 *mainBGMap2;
-u16 *subBGMap;
-u16 *subBGMap2;
+int mainBGText, mainBG256, mainBGBehind, subBGText, subBG256, subBGBehind;
+u16 *mainBGMapText;
+u16 *mainBGMap256;
+u16 *mainBGMapBehind;
+u16 *subBGMapText;
+u16 *subBGMap256;
+u16 *subBGMapBehind;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -85,15 +90,15 @@ const char *town_name() {
 	return text_from_save(4, 8);
 }
 
-void show_player_information() {
-	clear_screen(subBGMap);
-	map_print(subBGMap, 1, 1, filename);
-	map_printf(subBGMap, 1, 2, "Town: %s",     town_name());
-	map_printf(subBGMap, 1, 3, "Player 1: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*0, 8));
-	map_printf(subBGMap, 1, 4, "Player 2: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*1, 8));
-	map_printf(subBGMap, 1, 5, "Player 3: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*2, 8));
-	map_printf(subBGMap, 1, 6, "Player 4: %s", text_from_save(0x228E + PER_PLAYER_OFFSET*3, 8));
-	//map_printf(subBGMap, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
+void show_town_information_on_top_screen() {
+	clear_screen(subBGMapText);
+	map_print(subBGMapText, 1, 1, filename);
+	map_printf(subBGMapText, 1, 2, "Town: %s",     town_name());
+	map_printf(subBGMapText, 1, 3, "%s", player_name(0));
+	map_printf(subBGMapText, 1, 4, "%s", player_name(1));
+	map_printf(subBGMapText, 1, 5, "%s", player_name(2));
+	map_printf(subBGMapText, 1, 6, "%s", player_name(3));
+	//map_printf(subBGMapText, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
 }
 
 int verify_loaded_savefile() {
@@ -101,7 +106,7 @@ int verify_loaded_savefile() {
 		popup_notice("That isn't a valid savefile");
 		return 0;
 	}
-	show_player_information();
+	show_town_information_on_top_screen();
 	load_extra_storage();
 	return 1;
 }
@@ -237,10 +242,6 @@ void menu_map() {
 
 }
 
-void menu_patterns() {
-
-}
-
 void menu_house() {
 
 }
@@ -269,28 +270,32 @@ int main(int argc, char **argv) {
 	vramSetBankH(VRAM_H_LCD);
 	vramSetBankI(VRAM_I_LCD);
 
-	// https://mtheall.com/vram.html#T0=2&NT0=1024&MB0=0&TB0=1&S0=1&T1=2&NT1=1024&MB1=2&TB1=3&S1=1&T2=8&MB2=4&TB2=5
-	Keyboard kb2;
+	// https://mtheall.com/vram.html#T0=2&NT0=1024&MB0=0&TB0=1&S0=1&T1=1&NT1=1024&MB1=2&TB1=3&S1=1&T2=2&NT2=512&MB2=4&TB2=7&S2=2
 	videoSetMode(MODE_0_2D);
-	int mainBG  = bgInit(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
-	int mainBG2 = bgInit(1, BgType_Text4bpp, BgSize_T_512x256, 2, 3);
-	keyboardInit(&kb2, 2, BgType_Text4bpp, BgSize_T_256x512, 4, 5, true, true);
+	mainBGText   = bgInit(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
+	mainBG256    = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
+	mainBGBehind = bgInit(2, BgType_Text4bpp, BgSize_T_256x512, 4, 7);
 
 	videoSetModeSub(MODE_0_2D);
-	int subBG  = bgInitSub(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
-	int subBG2 = bgInitSub(1, BgType_Text4bpp, BgSize_T_512x256, 2, 3);
+	subBGText    = bgInitSub(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
+	subBG256     = bgInitSub(1, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
+	subBGBehind  = bgInitSub(2, BgType_Text4bpp, BgSize_T_256x512, 4, 7);
 
-    mainBGMap  = (u16*)bgGetMapPtr(mainBG);
-    subBGMap   = (u16*)bgGetMapPtr(subBG);
-    mainBGMap2 = (u16*)bgGetMapPtr(mainBG2);
-    subBGMap2  = (u16*)bgGetMapPtr(subBG2);
+    mainBGMapText   = (u16*)bgGetMapPtr(mainBGText);
+    mainBGMap256    = (u16*)bgGetMapPtr(mainBG256);
+    mainBGMapBehind = (u16*)bgGetMapPtr(mainBGBehind);
+    subBGMapText    = (u16*)bgGetMapPtr(subBGText);
+    subBGMap256     = (u16*)bgGetMapPtr(subBGText);
+    subBGMapBehind  = (u16*)bgGetMapPtr(subBGBehind);
 
-	dmaCopy(my_fontTiles, bgGetGfxPtr(mainBG),  sizeof(my_fontTiles));
-	dmaCopy(my_fontTiles, bgGetGfxPtr(subBG),   sizeof(my_fontTiles));
-	dmaCopy(my_fontTiles, bgGetGfxPtr(mainBG2), sizeof(my_fontTiles));
-	dmaCopy(my_fontTiles, bgGetGfxPtr(subBG2),  sizeof(my_fontTiles));
-	dmaCopy(my_fontPal,   BG_PALETTE,           sizeof(my_fontPal));
-	dmaCopy(my_fontPal,   BG_PALETTE_SUB,       sizeof(my_fontPal));
+	dmaCopy(my_fontTiles, bgGetGfxPtr(mainBGText)  ,sizeof(my_fontTiles));
+	dmaFillHalfWords(0,   bgGetGfxPtr(mainBG256), 64);
+	dmaCopy(my_fontTiles, bgGetGfxPtr(mainBGBehind),sizeof(my_fontTiles));
+	dmaCopy(my_fontTiles, bgGetGfxPtr(subBGText),   sizeof(my_fontTiles));
+	dmaCopy(my_fontTiles, bgGetGfxPtr(subBGBehind), sizeof(my_fontTiles));
+	dmaCopy(my_fontPal,   BG_PALETTE,               sizeof(my_fontPal));
+	dmaCopy(my_fontPal,   BG_PALETTE_SUB,           sizeof(my_fontPal));
+	clear_screen_256();
 
     setBrightness(3, 0); // Both screens full brightness
 
@@ -298,8 +303,8 @@ int main(int argc, char **argv) {
 
 	bool init_ok = fatInitDefault();
 	if(!init_ok) {
-		map_print(mainBGMap,  0, 0, "fatInitDefault() error");
-		map_print(mainBGMap,  0, 1, "Push start to exit...");
+		map_print(mainBGMapText,  0, 0, "fatInitDefault() error");
+		map_print(mainBGMapText,  0, 1, "Push start to exit...");
 		wait_for_start();
 		return 0;
 	}
@@ -312,12 +317,12 @@ int main(int argc, char **argv) {
 
 	// --------------------------------------------------------------
 	// "Title screen"
-	clear_screen(subBGMap);
-	map_box(subBGMap, 0, 9, 32, 6);
-	map_print(subBGMap,  1, 10, "WildStorage");
-	map_print(subBGMap,  1, 11, "An ACWW item storage tool");
-	map_print(subBGMap,  1, 13, "made by NovaSquirrel");
-	map_print(subBGMap,  1, 20, "Version 0.0.1");
+	clear_screen(subBGMapText);
+	map_box(subBGMapText, 0, 9, 32, 6);
+	map_print(subBGMapText,  1, 10, "WildStorage");
+	map_print(subBGMapText,  1, 11, "An ACWW item storage tool");
+	map_print(subBGMapText,  1, 13, "made by NovaSquirrel");
+	map_print(subBGMapText,  1, 20, "Version 0.0.1");
 
 	int title_screen_y = 0;
 	bool proceed_from_title_screen = 0;
@@ -331,8 +336,8 @@ int main(int argc, char **argv) {
 			{
 				int result = choose_file();
 				if(result == -2) {
-					map_print(mainBGMap,  0, 0, "opendir() error");
-					map_print(mainBGMap,  0, 1, "Push start to exit...");
+					map_print(mainBGMapText,  0, 0, "opendir() error");
+					map_print(mainBGMapText,  0, 1, "Push start to exit...");
 					wait_for_start();
 					return 0;
 				}
@@ -365,7 +370,6 @@ int main(int argc, char **argv) {
 				break;
 			case 1:
 				menu_storage();
-				show_player_information();
 				break;
 			case 2:
 				menu_map();
@@ -388,5 +392,6 @@ int main(int argc, char **argv) {
 				main_menu_y = 0;
 				break;
 		}
+		show_town_information_on_top_screen();
 	}
 }

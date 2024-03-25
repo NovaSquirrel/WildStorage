@@ -10,10 +10,13 @@ extern int player_offset;
 extern u8 savefile[256 * 1024];
 extern const char *acww_folder_prefix;
 
-extern u16 *mainBGMap;
-extern u16 *mainBGMap2;
-extern u16 *subBGMap;
-extern u16 *subBGMap2;
+extern int mainBGText, mainBG256, mainBGBehind, subBGText, subBG256, subBGBehind;
+extern u16 *mainBGMapText;
+extern u16 *mainBGMap256;
+extern u16 *mainBGMapBehind;
+extern u16 *subBGMapText;
+extern u16 *subBGMap256;
+extern u16 *subBGMapBehind;
 
 void set_savefile_u16(int index, u16 value);
 u16 get_savefile_u16(int index);
@@ -30,10 +33,11 @@ void clear_screen(u16 *screen);
 void map_print(u16 *map, int x, int y, const char *text);
 void map_printf(u16 *map, int x, int y, const char *fmt, ...);
 void map_box(u16 *map, int x, int y, int w, int h);
-void map_put(u16 *map, int x, int y, char c);
+void map_put(u16 *map, int x, int y, u16 c);
 int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice);
 int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choices, int choice_count, int current_choice);
 int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item);
+void wait_for_start();
 
 const char *name_for_item(unsigned short item_id);
 unsigned short icon_for_item(unsigned short item_id);
@@ -58,6 +62,13 @@ enum {
 	TILE_BUTTON_Y = 0xe3,
 	TILE_BUTTON_L = 0xe4,
 	TILE_BUTTON_R = 0xe5,
+	TILE_VERTICAL_PICKER_L = 0xfa,
+	TILE_VERTICAL_PICKER_R = 0xfb,
+	TILE_VERTICAL_PICKER_L_INACTIVE = 0xfc,
+	TILE_VERTICAL_PICKER_R_INACTIVE = 0xfd,
+	TILE_SELECTION_BOX_TOP_LEFT = 0xe7,
+	TILE_SELECTION_BOX_TOP      = 0xe8,
+	TILE_SELECTION_BOX_LEFT     = 0xe9,
 };
 
 #define TOWN_SAVE_SIZE 0x15FE0

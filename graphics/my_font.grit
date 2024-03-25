@@ -8,8 +8,9 @@
 -mR!
 -m!
 
-# Don't generate a palette
-#-p!
+# Generate a palette
+-p
+-pn 16
 
 # Black is transparent
 -gT000000

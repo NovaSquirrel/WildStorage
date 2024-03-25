@@ -98,6 +98,10 @@ const size_t inventory_size[] = {
 
 // Functions ------------------------------------
 
+u16 *current_storage_swap_screen_map() {
+	return storage_swap_screen ? mainBGMapText : subBGMapText;
+}
+
 void load_extra_storage() {
 	const char *town = town_name();
 
@@ -242,40 +246,40 @@ int calc_page_count(int size, int page_size) {
 }
 
 void redraw_storage_screens() {
-	clear_screen(mainBGMap);
-	clear_screen(subBGMap);
+	clear_screen(mainBGMapText);
+	clear_screen(subBGMapText);
 
 	int page_count;
 
 	// Upper screen
 	page_count = calc_page_count(inventory_size[storage_screen_inventory[0]], 15);
 	if(page_count > 1)
-		map_printf(subBGMap, 1, 1, "%s (%d/%d)", storage_inventory_names[storage_screen_inventory[0]], storage_page[0]+1, page_count);
+		map_printf(subBGMapText, 1, 1, "%s (%d/%d)", storage_inventory_names[storage_screen_inventory[0]], storage_page[0]+1, page_count);
 	else
-		map_print(subBGMap, 1, 1, storage_inventory_names[storage_screen_inventory[0]]);
-	map_box(subBGMap,   0, 2, 32, 17);
+		map_print(subBGMapText, 1, 1, storage_inventory_names[storage_screen_inventory[0]]);
+	map_box(subBGMapText,   0, 2, 32, 17);
 
 	// Bottom screen
 	page_count = calc_page_count(inventory_size[storage_screen_inventory[1]], 15);
 	if(page_count > 1)
-		map_printf(mainBGMap, 1, 1, "%s (%d/%d)", storage_inventory_names[storage_screen_inventory[1]], storage_page[1]+1, page_count);
+		map_printf(mainBGMapText, 1, 1, "%s (%d/%d)", storage_inventory_names[storage_screen_inventory[1]], storage_page[1]+1, page_count);
 	else
-		map_print(mainBGMap, 1, 1, storage_inventory_names[storage_screen_inventory[1]]);
-	map_box(mainBGMap,   0, 2, 32, 17);
+		map_print(mainBGMapText, 1, 1, storage_inventory_names[storage_screen_inventory[1]]);
+	map_box(mainBGMapText,   0, 2, 32, 17);
 
-	map_print(mainBGMap, 1, 20, "\xe0:Move \xe1:Jump \xe2:Edit \xe3:Send");
-	map_print(mainBGMap, 1, 21, "\xe4\xe5:Choose inventory");
-	map_print(mainBGMap, 1, 22, "Start: Finish");
+	map_print(mainBGMapText, 1, 20, "\xe0:Move \xe1:Jump \xe2:Edit \xe3:Send");
+	map_print(mainBGMapText, 1, 21, "\xe4\xe5:Choose inventory");
+	map_print(mainBGMapText, 1, 22, "Start: Finish");
 
 	// Cursors
 	map_print(storage_map, 1, 3+storage_y, "\xf0");
 	if(storage_swapping && storage_swap_page == storage_page[storage_swap_screen]) {
-		map_print(storage_swap_screen ? mainBGMap : subBGMap, 1, 3+storage_swap_y, "\xf1");
+		map_print(current_storage_swap_screen_map(), 1, 3+storage_swap_y, "\xf1");
 	}
 
 	// Display items
 	for(int screen=0; screen<2; screen++) {
-		u16 *screen_ptr = screen ? mainBGMap : subBGMap;
+		u16 *screen_ptr = screen ? mainBGMapText : subBGMapText;
 		for(int i=0; i<15; i++) {
 			u16 item = get_inventory_item(storage_screen_inventory[screen], storage_page[screen]*15+i);
 			if(item == INVALID_ITEM_SLOT) {
@@ -322,7 +326,7 @@ void menu_storage() {
 	storage_screen_inventory[1] = 0;
 	storage_page[0] = 0;
 	storage_page[1] = 0;
-	storage_map = subBGMap;
+	storage_map = subBGMapText;
 
 	redraw_storage_screens();
 
@@ -372,7 +376,7 @@ void menu_storage() {
 
 		// Choose new inventory
 		if(keys_down & (KEY_L | KEY_R)) {
-			int new_screen = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, "Choose box to display here", storage_inventory_names, 18, storage_screen_inventory[storage_screen]);
+			int new_screen = choose_from_list_on_screen(storage_map, "Choose box to display here", storage_inventory_names, 18, storage_screen_inventory[storage_screen]);
 			if(new_screen >= 0) {
 				storage_screen_inventory[storage_screen] = new_screen;
 				storage_swapping = false;
@@ -386,7 +390,7 @@ void menu_storage() {
 		if(storage_y != old_y) {
 			map_print(storage_map, 1, 3+old_y,     " ");
 			if(storage_swapping && storage_swap_page == storage_page[storage_swap_screen]) {
-				map_print(storage_swap_screen ? mainBGMap : subBGMap, 1, 3+storage_swap_y, "\xf1");
+				map_print(current_storage_swap_screen_map(), 1, 3+storage_swap_y, "\xf1");
 			}
 			map_print(storage_map, 1, 3+storage_y, "\xf0");
 		}
@@ -397,7 +401,7 @@ void menu_storage() {
 				storage_swapping = false;
 				// Erase old cursor
 				if(storage_swap_screen != storage_screen || storage_y != storage_swap_y)
-					map_print(storage_swap_screen ? mainBGMap : subBGMap, 1, 3+storage_swap_y, " ");
+					map_print(current_storage_swap_screen_map(), 1, 3+storage_swap_y, " ");
 
 				// Actually attempt to swap the items
 				int swap_index_1 = storage_page[storage_screen]*15+storage_y;
@@ -420,7 +424,7 @@ void menu_storage() {
 		// Jump between screens
 		if(keys_down & KEY_B) {
 			storage_screen ^= 1;
-			storage_map = (storage_screen) ? mainBGMap : subBGMap;
+			storage_map = storage_screen ? mainBGMapText : subBGMapText;
 			redraw_storage_screens();
 		}
 
@@ -432,14 +436,14 @@ void menu_storage() {
 
 			char buffer[32];
 			sprintf(buffer, "Edit: Item %.4x", initial_item);
-			int edit_type = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, buffer, edit_item_options, 6, edit_type_index);
+			int edit_type = choose_from_list_on_screen(storage_map, buffer, edit_item_options, 6, edit_type_index);
 			if(edit_type >= 0) {
 				edit_type_index = edit_type;
 
 				switch(edit_type) {
 					case 0: // Choose
 					{
-						int new_item = choose_item_from_all_on_screen(storage_swap_screen ? mainBGMap : subBGMap, "Select an item to put here", initial_item);
+						int new_item = choose_item_from_all_on_screen(storage_map, "Select an item to put here", initial_item);
 						if(new_item >= 0) {
 							set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
 						}
@@ -447,10 +451,10 @@ void menu_storage() {
 					}
 					case 1: // Choose (with category)
 					{
-						int which_category = choose_from_list_on_screen(storage_screen ? mainBGMap : subBGMap, "Which category?", edit_item_category_names, 18, edit_item_category);
+						int which_category = choose_from_list_on_screen(storage_map, "Which category?", edit_item_category_names, 18, edit_item_category);
 						if(which_category >= 0) {
 							edit_item_category = which_category;
-							int new_item = choose_item_from_all_on_screen(storage_swap_screen ? mainBGMap : subBGMap, "Select an item to put here", edit_item_category_values[which_category]);
+							int new_item = choose_item_from_all_on_screen(storage_map, "Select an item to put here", edit_item_category_values[which_category]);
 							if(new_item >= 0) {
 								set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
 							}
@@ -468,9 +472,9 @@ void menu_storage() {
 						break;
 					case 5: // Sort this inventory
 						if(sort_inventory(storage_screen_inventory[storage_screen]) == 1) {
-							popup_noticef_on_screen(storage_screen ? mainBGMap : subBGMap, "Sorted %s!", storage_inventory_names[storage_screen_inventory[storage_screen]]);
+							popup_noticef_on_screen(storage_map, "Sorted %s!", storage_inventory_names[storage_screen_inventory[storage_screen]]);
 						} else {
-							popup_noticef_on_screen(storage_screen ? mainBGMap : subBGMap, "That inventory isn't sortable");
+							popup_noticef_on_screen(storage_map, "That inventory isn't sortable");
 						}
 						break;
 				}

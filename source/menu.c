@@ -41,7 +41,7 @@ void clear_screen(u16 *screen) {
 	dmaFillHalfWords(' ', screen, 32*32*2);
 }
 
-void map_put(u16 *map, int x, int y, char c) {
+void map_put(u16 *map, int x, int y, u16 c) {
 	map[y * 32 + x] = c;
 }
 
@@ -160,7 +160,7 @@ int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choice
 }
 
 int choose_from_list(const char *prompt, const char **choices, int choice_count, int current_choice) {
-	return choose_from_list_on_screen(mainBGMap, prompt, choices, choice_count, current_choice);
+	return choose_from_list_on_screen(mainBGMapText, prompt, choices, choice_count, current_choice);
 }
 
 int confirm_choice(const char *prompt) {
