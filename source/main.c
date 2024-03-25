@@ -53,7 +53,9 @@ void menu_utility();
 void menu_patterns();
 void load_extra_storage();
 void save_extra_storage();
-void clear_screen_256(u16 *map);
+void load_extra_patterns();
+void save_extra_patterns();
+const char *getNeighborName(size_t id);
 
 // ------------------------------------------------------------------------------------------------
 // Strings
@@ -96,10 +98,43 @@ void show_town_information_on_top_screen() {
 	clear_screen(subBGMapText);
 	map_print(subBGMapText, 1, 1, filename);
 	map_printf(subBGMapText, 1, 2, "Town: %s",     town_name());
-	map_printf(subBGMapText, 1, 3, "%s", player_name(0));
-	map_printf(subBGMapText, 1, 4, "%s", player_name(1));
-	map_printf(subBGMapText, 1, 5, "%s", player_name(2));
-	map_printf(subBGMapText, 1, 6, "%s", player_name(3));
+
+	map_printf(subBGMapText, 1, 4, "Players:");
+	for(int i=0; i<4; i++) {
+		const char *name = player_name_or_null(i);
+		if(name)
+			map_printf(subBGMapText, 1+(i&1)*16, 5+i/2, "* %s", name);
+		else
+			map_printf(subBGMapText, 1+(i&1)*16, 5+i/2, "* Empty");
+	}
+
+	map_print(subBGMapText, 1, 8, "Villagers:");
+	for(int i=0; i<8; i++) {
+		int identity = savefile[0x09094 + 0x700*i + 0x73]; // romsave.txt seems to have the wrong offset here
+		const char *name = getNeighborName(identity);
+		if(identity < 150) {
+			map_printf(subBGMapText, 1+(i&1)*16, 9+i/2, "* %s", name);
+		}
+	}
+
+	if(savefile[0x11438] || savefile[0x11439]) {
+		int ninth_identity = savefile[0x11443];
+		const char *ninth_name = getNeighborName(ninth_identity);
+
+		char town1[20];
+		char town2[20];
+		acstrDecode(town1, &savefile[0x11438+2], 8);
+		acstrDecode(town2, &savefile[0x1144C+2], 8);
+
+		if(ninth_identity < 150) {
+			map_print(subBGMapText,  1, 14, "Moving:");
+			map_printf(subBGMapText, 1, 15, "* %s from %s", ninth_name, town1);
+			if(strcmp(town1, town2)) {
+				map_printf(subBGMapText, 1, 16, "  and %s", town2);
+			}
+		}
+	}
+
 	//map_printf(subBGMapText, 1, 4, "Money: %d", *((int*)&savefile[0x01B4C + player_offset]));
 }
 
@@ -110,6 +145,7 @@ int verify_loaded_savefile() {
 	}
 	show_town_information_on_top_screen();
 	load_extra_storage();
+	load_extra_patterns();
 	return 1;
 }
 
@@ -210,7 +246,7 @@ void get_backup_filename() {
 void menu_save_load() {
 	switch(choose_from_list("Save/Load", file_options, 5, 0)) {
 		case 0: // Load
-			if(choose_file() == 1) {
+			if(choose_file(SAVE_FILES) == 1) {
 				reload_savefile();
 			}		
 			break;
@@ -223,6 +259,7 @@ void menu_save_load() {
 			if(w == sizeof(savefile)) {
 				popup_notice("Saved successfully!");
 				save_extra_storage();
+				save_extra_patterns();
 			} else {
 				popup_notice("Unable to save");
 			}
@@ -358,7 +395,7 @@ int main(int argc, char **argv) {
 		switch(title_screen_y) {
 			case 0: // Load SD card
 			{
-				int result = choose_file();
+				int result = choose_file(SAVE_FILES);
 				if(result == -2) {
 					map_print(mainBGMapText,  0, 0, "opendir() error");
 					map_print(mainBGMapText,  0, 1, "Push start to exit...");
@@ -387,7 +424,9 @@ int main(int argc, char **argv) {
 	int main_menu_y = 0;
 	while(1) {
 		sprintf(title_buffer, "Main menu");
-		main_menu_y = choose_from_list(title_buffer, main_menu_options, 8, main_menu_y);
+		int new_menu_y = choose_from_list(title_buffer, main_menu_options, 8, main_menu_y);
+		if(new_menu_y >= 0)
+			main_menu_y = new_menu_y;
 		switch(main_menu_y) {
 			case 0:
 				menu_save_load();

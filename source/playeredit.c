@@ -155,6 +155,13 @@ const char *player_name(int which) {
 	return name;
 }
 
+const char *player_name_or_null(int which) {
+	const char *name = text_from_save(0x228E + PER_PLAYER_OFFSET*which, 8);
+	if(!name[0])
+		return NULL;
+	return name;
+}
+
 void fill_in_player_name_options() {
 	strcpy(player_name_1, player_name(0));
 	strcpy(player_name_2, player_name(1));

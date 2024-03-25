@@ -41,6 +41,10 @@ void clear_screen(u16 *screen) {
 	dmaFillHalfWords(' ', screen, 32*32*2);
 }
 
+void clear_screen_256(u16 *map) {
+	dmaFillHalfWords(0, map, 32*32*2);
+}
+
 void map_rectfill(u16 *map, int x, int y, int w, int h, u16 c) {
 	for(int i=0; i<h; i++)
 		for(int j=0; j<w; j++)
@@ -173,6 +177,10 @@ int confirm_choice(const char *prompt) {
 	return choose_from_list(prompt, are_you_sure_options, 2, 0);
 }
 
+int confirm_choice_on_screen(u16 *screen, const char *prompt) {
+	return choose_from_list_on_screen(screen, prompt, are_you_sure_options, 2, 0);
+}
+
 int popup_notice(const char *prompt) {
 	return choose_from_list(prompt, ok_options, 1, 0);
 }
@@ -197,7 +205,7 @@ int popup_noticef_on_screen(u16 *map, const char *fmt, ...) {
 	return code;
 }
 
-int choose_file() {
+int choose_file_on_screen(u16 *screen, int file_type) {
 	#define MAX_FILES_IN_FOLDER 100
 	char *directory_names[MAX_FILES_IN_FOLDER];
 	int directory_index[MAX_FILES_IN_FOLDER];
@@ -232,11 +240,18 @@ int choose_file() {
 				strlcat(name_buffer, "/", sizeof(name_buffer));
 			} else {
 				int length = strlen(cur->d_name);
-				if(( // Only show filenames ending in .SAV with any capitalization
+				if(file_type == SAVE_FILES && ( // Only show filenames ending in .SAV with any capitalization
 					(cur->d_name[length-1] != 'v' && cur->d_name[length-1] != 'V') ||
 					(cur->d_name[length-2] != 'a' && cur->d_name[length-2] != 'A') ||
 					(cur->d_name[length-3] != 's' && cur->d_name[length-3] != 'S') ||
 					(cur->d_name[length-4] != '.')))
+					continue;
+				if(file_type == PATTERN_FILES && ( // Only show filenames ending in .ACWW with any capitalization
+					(cur->d_name[length-1] != 'w' && cur->d_name[length-1] != 'W') ||
+					(cur->d_name[length-2] != 'w' && cur->d_name[length-2] != 'W') ||
+					(cur->d_name[length-3] != 'c' && cur->d_name[length-3] != 'C') ||
+					(cur->d_name[length-4] != 'a' && cur->d_name[length-4] != 'A') ||
+					(cur->d_name[length-5] != '.')))
 					continue;
 			}
 
@@ -252,7 +267,7 @@ int choose_file() {
         char *cwd = getcwd(NULL, 0);
 		strlcpy(name_buffer, cwd, sizeof(name_buffer));
         free(cwd);
-		int result = choose_from_list(name_buffer, (const char**)directory_names, item_count, 0);
+		int result = choose_from_list_on_screen(screen, name_buffer, (const char**)directory_names, item_count, 0);
 
 		// Clean up
 		for(int i=0; i<item_count; i++) {
@@ -282,4 +297,8 @@ int choose_file() {
 	}
 
 	return return_code;
+}
+
+int choose_file(int file_type) {
+	return choose_file_on_screen(mainBGMapText, file_type);
 }

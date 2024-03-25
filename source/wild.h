@@ -21,15 +21,22 @@ extern u16 *subBGMapBehind;
 void set_savefile_u16(int index, u16 value);
 u16 get_savefile_u16(int index);
 const char *player_name(int which);
+const char *player_name_or_null(int which);
 const char *town_name();
 const char *text_from_save(int index, int length);
 
 int confirm_choice(const char *prompt);
+int confirm_choice_on_screen(u16 *screen, const char *prompt);
 int popup_notice(const char *prompt);
 int popup_noticef(const char *fmt, ...);
 int popup_noticef_on_screen(u16 *map, const char *fmt, ...);
-int choose_file();
+#define ALL_FILES 0
+#define SAVE_FILES 1
+#define PATTERN_FILES 2
+int choose_file(int file_type);
+int choose_file_on_screen(u16 *map, int file_type);
 void clear_screen(u16 *screen);
+void clear_screen_256(u16 *map);
 void map_print(u16 *map, int x, int y, const char *text);
 void map_printf(u16 *map, int x, int y, const char *fmt, ...);
 void map_box(u16 *map, int x, int y, int w, int h);
@@ -40,6 +47,8 @@ int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choice
 int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item);
 void wait_for_start();
 void wait_vblank_and_animate();
+
+extern const char *ok_options[];
 
 const char *name_for_item(unsigned short item_id);
 unsigned short icon_for_item(unsigned short item_id);
@@ -64,10 +73,14 @@ enum {
 	TILE_BUTTON_Y = 0xe3,
 	TILE_BUTTON_L = 0xe4,
 	TILE_BUTTON_R = 0xe5,
-	TILE_VERTICAL_PICKER_L = 0xfa,
-	TILE_VERTICAL_PICKER_R = 0xfb,
-	TILE_VERTICAL_PICKER_L_INACTIVE = 0xfc,
-	TILE_VERTICAL_PICKER_R_INACTIVE = 0xfd,
+	TILE_VERTICAL_PICKER_L = 0xb0,
+	TILE_VERTICAL_PICKER_R = 0xb1,
+	TILE_VERTICAL_PICKER_L_INACTIVE = 0xb2,
+	TILE_VERTICAL_PICKER_R_INACTIVE = 0xb3,
+	TILE_VERTICAL_PICKER_L_BAR = 0xb4,
+	TILE_VERTICAL_PICKER_R_BAR = 0xb5,
+	TILE_VERTICAL_PICKER_L_BAR_INACTIVE = 0xb6,
+	TILE_VERTICAL_PICKER_R_BAR_INACTIVE = 0xb7,
 	TILE_SELECTION_BOX_TOP_LEFT = 0xe7,
 	TILE_SELECTION_BOX_TOP      = 0xe8,
 	TILE_SELECTION_BOX_LEFT     = 0xe9,
@@ -77,3 +90,4 @@ enum {
 #define PER_PLAYER_OFFSET 8844
 
 #define EXTRA_STORAGE_SIZE 1500
+#define EXTRA_PATTERN_STORAGE_SIZE 1024
