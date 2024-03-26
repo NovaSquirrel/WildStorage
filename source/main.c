@@ -69,7 +69,7 @@ const char *title_screen_options[] = {"Load from SD card", "Load from cartridge"
 char filename[200];
 char full_file_path[256];
 char title_buffer[32];
-char text_conversion_buffer[40];
+char text_conversion_buffer[64];
 u8 savefile[256 * 1024];
 
 bool has_acww_folder;
@@ -121,8 +121,8 @@ void show_town_information_on_top_screen() {
 		int ninth_identity = savefile[0x11443];
 		const char *ninth_name = getNeighborName(ninth_identity);
 
-		char town1[20];
-		char town2[20];
+		char town1[8*3+1];
+		char town2[8*3+1];
 		acstrDecode(town1, &savefile[0x11438+2], 8);
 		acstrDecode(town2, &savefile[0x1144C+2], 8);
 

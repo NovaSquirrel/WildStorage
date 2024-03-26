@@ -493,9 +493,9 @@ void menu_patterns() {
 							pattern_folder_prefix = "/data/acww/patterns/";
 						}
 
-						char name_buffer[20];
-						char author_buffer[20];
-						char town_buffer[20];
+						char name_buffer[16*3+1];
+						char author_buffer[8*3+1];
+						char town_buffer[8*3+1];
 						acstrDecode(name_buffer,   pattern->pattern_name,     16);
 						acstrDecode(town_buffer,   pattern->author_town.name, 8);
 						acstrDecode(author_buffer, pattern->author.name,      8);
