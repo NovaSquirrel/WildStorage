@@ -155,11 +155,13 @@ int pattern_select_screen;
 int pattern_select_page[2];
 int pattern_edit_option = 0;
 
-bool pattern_copying_or_swapping = false;
-int pattern_copy_swap_x;
-int pattern_copy_swap_y;
-int pattern_copy_swap_screen;
-int pattern_copy_swap_page;
+// Swap status
+bool pattern_swapping = false;
+int pattern_swap_x;
+int pattern_swap_y;
+int pattern_swap_screen;
+int pattern_swap_page;
+struct acww_pattern *pattern_swap_pointer;
 
 struct acww_pattern copied_pattern;
 bool have_copied_pattern = false;
@@ -186,7 +188,7 @@ void load_extra_patterns() {
 	FILE *f = fopen(full_file_path, "rb");
 	if(f) {
 		if(fread(extra_pattern_storage, 1, sizeof(extra_pattern_storage), f) != sizeof(extra_pattern_storage))
-			popup_noticef("Bad extra patterns file?");
+			popup_notice("Bad extra patterns file?");
 		fclose(f);
 	}
 }
@@ -199,10 +201,10 @@ void save_extra_patterns() {
 		FILE *f = fopen(full_file_path, "wb");
 		if(f) {
 			if(fwrite(extra_pattern_storage, 1, sizeof(extra_pattern_storage), f) != sizeof(extra_pattern_storage))
-				popup_noticef("Couldn't save patterns file");
+				popup_notice("Couldn't save patterns file");
 			fclose(f);
 		} else {
-			popup_noticef("Couldn't create patterns file");
+			popup_notice("Couldn't create patterns file");
 		}
 
 		edited_extra_patterns = false;
@@ -274,7 +276,7 @@ void redraw_pattern_manager_top_screen(int update_map, int update_tiles) {
 		clear_screen_256(subBGMap256);
 
 		map_box(subBGMapText,  0,  20, 32, 4);
-		map_print(subBGMapText, 1, 0, "\xe0:Move \xe1:Jump \xe2:Menu \xe3:Copy");
+		map_print(subBGMapText, 1, 0, "\xe0:Move \xe1:Jump \xe2:Menu");// \xe3:Copy");
 		map_printf(subBGMapText, 30, 0, "%.2d", pattern_select_page[1]+1);
 	}
 
@@ -321,7 +323,7 @@ void menu_patterns() {
 	pattern_select_screen = 0;
 	pattern_select_page[0] = 0;
 	pattern_select_page[1] = 0;
-	pattern_copying_or_swapping = false;
+	pattern_swapping = false;
 	bool first_draw = true;
 
 	redraw_pattern_manager_top_screen(1, 1);
@@ -387,10 +389,55 @@ void menu_patterns() {
 			pattern_select_screen ^= 1;
 		}
 
-		if(keys_down & KEY_A) {
+		if(keys_down & KEY_A) { // Move
+			if(pattern_swapping) {
+				// Erase swap cursor
+				if(pattern_swap_screen == 0) {
+					map_put(mainBGMapText,      pattern_swap_x*4+1, 6*pattern_swap_y+5, ' ');
+					map_put(mainBGMapText,      pattern_swap_x*4+2, 6*pattern_swap_y+5, ' ');
+				} else {
+					map_put(subBGMapText,       pattern_swap_x*4+1, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
+					map_put(subBGMapText,       pattern_swap_x*4+2, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
+				}
 
+				struct acww_pattern *pattern = get_pattern_for_slot(pattern_select_screen, pattern_select_x, pattern_select_y);
+				struct acww_pattern temp = *pattern;
+				if(pattern != pattern_swap_pointer) {
+					*pattern = *pattern_swap_pointer;
+					*pattern_swap_pointer = temp;
+					pattern_swapping = false;
+
+					// Load new patterns
+					if(pattern_select_screen == 0 || pattern_swap_screen == 0)
+						redraw_pattern_manager_bottom_screen(0, 1);
+					if(pattern_select_screen == 1 || pattern_swap_screen == 1)
+						redraw_pattern_manager_top_screen(0, 1);
+
+					// Swap patterns on the map
+					if(pattern_swap_screen == 0 && pattern_select_screen == 0 && pattern_select_page[0] == 0 && pattern_swap_page == 0) {
+						u16 swap_item_a = 0x00a7 + pattern_select_x + pattern_select_y*8;
+						u16 swap_item_b = 0x00a7 + pattern_swap_x   + pattern_swap_y*8;
+
+						for(int i=TOWN_ITEM_GRID_START; i<=TOWN_ITEM_GRID_END; i+=2) {
+							u16 item = get_savefile_u16(i);
+							if(item == swap_item_a)
+								set_savefile_u16(i, swap_item_b);
+							else if(item == swap_item_b)
+								set_savefile_u16(i, swap_item_a);							
+						}
+					}
+				}
+			} else {
+				pattern_swap_x = pattern_select_x;
+				pattern_swap_y = pattern_select_y;
+				pattern_swap_screen  = pattern_select_screen;
+				pattern_swap_page    = pattern_select_page[pattern_select_screen];
+				pattern_swap_pointer = get_pattern_for_slot(pattern_swap_screen,   pattern_swap_x, pattern_swap_y);
+				pattern_swapping = true;
+			}
+			first_draw = true; // Redraw the text and cursors
 		}
-		if(keys_down & KEY_Y) {
+		if(keys_down & KEY_Y) { // Unused
 
 		}
 		if(keys_down & KEY_X) {
@@ -403,6 +450,7 @@ void menu_patterns() {
 				pattern_edit_option = edit_type;
 				switch(edit_type) {
 					case 0: // Edit
+						choose_from_list_on_screen(screen, "Not implemented yet!", ok_options, 1, 0);
 						break;
 					case 1: // Load from file
 					{
@@ -502,6 +550,10 @@ void menu_patterns() {
 						break;
 					}
 					case 8: // View pattern info
+						sprintf(title_buffer, "Mystery value: %x", pattern->unknown2 & 15);
+						choose_from_list_on_screen(screen, title_buffer, ok_options, 1, 0);
+						sprintf(title_buffer, "Author: %.4x; Town: %.4x", pattern->author.id, pattern->author_town.id);
+						choose_from_list_on_screen(screen, title_buffer, ok_options, 1, 0);
 						break;
 				}
 			}
@@ -536,6 +588,29 @@ void menu_patterns() {
 				map_put(subBGMapText,       old_pattern_select_x*4+1, 5*old_pattern_select_y+5, old_pattern_select_y == 3 ? TILE_BORDER_HORIZ : ' ');
 				map_put(subBGMapText,       old_pattern_select_x*4+2, 5*old_pattern_select_y+5, old_pattern_select_y == 3 ? TILE_BORDER_HORIZ : ' ');
 				map_rectfill(subBGMapText,  old_pattern_select_x*4,   5*old_pattern_select_y+1, 4, 4, ' ');
+			}
+
+			// Swap cursor
+			if(pattern_swapping) {
+				if(pattern_swap_page == pattern_select_page[pattern_swap_screen]) {
+					// Draw the swap cursor
+					if(pattern_swap_screen == 0) {
+						map_put(mainBGMapText,               pattern_swap_x*4+1, 6*pattern_swap_y+5, TILE_VERTICAL_PICKER_L_INACTIVE);
+						map_put(mainBGMapText,               pattern_swap_x*4+2, 6*pattern_swap_y+5, TILE_VERTICAL_PICKER_R_INACTIVE);
+					} else {
+						map_put(subBGMapText,                pattern_swap_x*4+1, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_VERTICAL_PICKER_L_BAR_INACTIVE : TILE_VERTICAL_PICKER_L_INACTIVE);
+						map_put(subBGMapText,                pattern_swap_x*4+2, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_VERTICAL_PICKER_R_BAR_INACTIVE : TILE_VERTICAL_PICKER_R_INACTIVE);
+					}
+				} else {
+					// If it's the wrong page, erase the swap cursor just in case you have just moved onto a different page
+					if(pattern_swap_screen == 0) {
+						map_put(mainBGMapText,      pattern_swap_x*4+1, 6*pattern_swap_y+5, ' ');
+						map_put(mainBGMapText,      pattern_swap_x*4+2, 6*pattern_swap_y+5, ' ');
+					} else {
+						map_put(subBGMapText,       pattern_swap_x*4+1, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
+						map_put(subBGMapText,       pattern_swap_x*4+2, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
+					}
+				}
 			}
 
 			// Draw new cursor position

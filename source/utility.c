@@ -36,7 +36,7 @@
 
 // ------------------------------------------------------------------------------------------------
 // Strings
-const char *utility_options[] = {"No Resetti", "Remove weeds", "Revive all flowers", "Water all flowers", "Replenish fruit", "Un-bury items", "Remove stray items", "Sort closets", "Sort extra storage"};
+const char *utility_options[] = {"No Resetti", "Remove weeds", "Revive all flowers", "Water all flowers", "Replenish fruit", "Un-bury items", "Remove stray items", "Sort closets", "Sort extra storage", "Reset pattern order"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -56,7 +56,7 @@ void menu_utility() {
 	static int which_option = 0;
 
 	while(1) {
-		int option = choose_from_list("Utility features", utility_options, 9, which_option);
+		int option = choose_from_list("Utility features", utility_options, 10, which_option);
 		if(option < 0)
 			return;
 		which_option = option;
@@ -72,7 +72,7 @@ void menu_utility() {
 			case 1: // Remove weeds
 			{
 				int weeds = 0;
-				for(int i=0x0C354; i<=0x0E352; i+=2) {
+				for(int i=TOWN_ITEM_GRID_START; i<=TOWN_ITEM_GRID_END; i+=2) {
 					u16 item = get_savefile_u16(i);
 					if((item >= 0x1d && item <= 0x0024) || item == 0x001b || item == 0x0089) { // Weeds, but also rafflesia
 						set_savefile_u16(i, EMPTY_ITEM);
@@ -85,7 +85,7 @@ void menu_utility() {
 			case 2: // Revive flowers
 			{
 				int flowers = 0, flowers2 = 0;
-				for(int i=0x0C354; i<=0x0E352; i+=2) {
+				for(int i=TOWN_ITEM_GRID_START; i<=TOWN_ITEM_GRID_END; i+=2) {
 					u16 item = get_savefile_u16(i);
 					if(item >= 0x6E && item <= 0x89) {
 						item -= 0x6E;
@@ -102,7 +102,7 @@ void menu_utility() {
 			case 3: // Water flowers
 			{
 				int flowers = 0;
-				for(int i=0x0C354; i<=0x0E352; i+=2) {
+				for(int i=TOWN_ITEM_GRID_START; i<=TOWN_ITEM_GRID_END; i+=2) {
 					u16 item = get_savefile_u16(i);
 					if(item >= 0x6E && item <= 0x88) {
 						item = item - 0x6E + 0x8A;
@@ -116,7 +116,7 @@ void menu_utility() {
 			case 4: // Replenish fruit
 			{
 				int fruit = 0;
-				for(int i=0x0C354; i<=0x0E352; i+=2) {
+				for(int i=TOWN_ITEM_GRID_START; i<=TOWN_ITEM_GRID_END; i+=2) {
 					u16 item = get_savefile_u16(i);
 
 					if(item >= 0x34 && item <= 0x36) {
@@ -161,7 +161,7 @@ void menu_utility() {
 			case 6: // Remove stray items
 			{
 				int stray = 0;
-				for(int i=0x0C354; i<=0x0E352; i+=2) {
+				for(int i=TOWN_ITEM_GRID_START; i<=TOWN_ITEM_GRID_END; i+=2) {
 					u16 item = get_savefile_u16(i) & 0xf000;
 					if(item == 0x1000 || item == 0x3000 || item == 0x4000) {
 						set_savefile_u16(i, EMPTY_ITEM);
@@ -187,6 +187,16 @@ void menu_utility() {
 				edited_extra_storage[2] = 1;
 				popup_notice("Sorted extra storage");
 				break;
+			case 9: // Reset pattern inventory order
+			{
+				for(int i=0; i<4; i++) {
+					for(int j=0; j<8; j++) {
+						savefile[0x114c + PER_PLAYER_OFFSET * i + j] = j;
+					}
+				}
+				popup_notice("Reset the pattern ordering");
+				break;
+			}
 		}
 	}
 }
