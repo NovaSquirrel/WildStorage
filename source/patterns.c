@@ -317,6 +317,16 @@ void redraw_pattern_manager_bottom_screen(int update_map, int update_tiles) {
 	}
 }
 
+void erase_pattern_swap_cursor() {
+	if(pattern_swap_screen == 0) {
+		map_put(mainBGMapText,      pattern_swap_x*4+1, 6*pattern_swap_y+5, ' ');
+		map_put(mainBGMapText,      pattern_swap_x*4+2, 6*pattern_swap_y+5, ' ');
+	} else {
+		map_put(subBGMapText,       pattern_swap_x*4+1, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
+		map_put(subBGMapText,       pattern_swap_x*4+2, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
+	}
+}
+
 void menu_patterns() {
 	pattern_select_x = 0;
 	pattern_select_y = 0;
@@ -391,14 +401,7 @@ void menu_patterns() {
 
 		if(keys_down & KEY_A) { // Move
 			if(pattern_swapping) {
-				// Erase swap cursor
-				if(pattern_swap_screen == 0) {
-					map_put(mainBGMapText,      pattern_swap_x*4+1, 6*pattern_swap_y+5, ' ');
-					map_put(mainBGMapText,      pattern_swap_x*4+2, 6*pattern_swap_y+5, ' ');
-				} else {
-					map_put(subBGMapText,       pattern_swap_x*4+1, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
-					map_put(subBGMapText,       pattern_swap_x*4+2, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
-				}
+				erase_pattern_swap_cursor();
 
 				struct acww_pattern *pattern = get_pattern_for_slot(pattern_select_screen, pattern_select_x, pattern_select_y);
 				struct acww_pattern temp = *pattern;
@@ -410,8 +413,10 @@ void menu_patterns() {
 					// Load new patterns
 					if(pattern_select_screen == 0 || pattern_swap_screen == 0)
 						redraw_pattern_manager_bottom_screen(0, 1);
-					if(pattern_select_screen == 1 || pattern_swap_screen == 1)
+					if(pattern_select_screen == 1 || pattern_swap_screen == 1) {
 						redraw_pattern_manager_top_screen(0, 1);
+						edited_extra_patterns = true;
+					}
 
 					// Swap patterns on the map
 					if(pattern_swap_screen == 0 && pattern_select_screen == 0 && pattern_select_page[0] == 0 && pattern_swap_page == 0) {
@@ -441,6 +446,10 @@ void menu_patterns() {
 
 		}
 		if(keys_down & KEY_X) {
+			if(pattern_swapping) {
+				erase_pattern_swap_cursor();
+				pattern_swapping = false;
+			}
 			bgHide(pattern_select_screen ? subBG256 : mainBG256);
 			u16 *screen = pattern_select_screen ? subBGMapText : mainBGMapText;
 			int edit_type = choose_from_list_on_screen(screen, "Edit pattern", edit_pattern_options, 9, pattern_edit_option);
@@ -603,13 +612,7 @@ void menu_patterns() {
 					}
 				} else {
 					// If it's the wrong page, erase the swap cursor just in case you have just moved onto a different page
-					if(pattern_swap_screen == 0) {
-						map_put(mainBGMapText,      pattern_swap_x*4+1, 6*pattern_swap_y+5, ' ');
-						map_put(mainBGMapText,      pattern_swap_x*4+2, 6*pattern_swap_y+5, ' ');
-					} else {
-						map_put(subBGMapText,       pattern_swap_x*4+1, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
-						map_put(subBGMapText,       pattern_swap_x*4+2, 5*pattern_swap_y+5, pattern_swap_y == 3 ? TILE_BORDER_HORIZ : ' ');
-					}
+					erase_pattern_swap_cursor();
 				}
 			}
 
