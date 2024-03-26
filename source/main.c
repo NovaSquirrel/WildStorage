@@ -21,14 +21,6 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
-
-  -----
-
-  This program references research and code from Animal Map
-
-  (c) 2005-2007 DsPet
-  Released as FreeWare and Open-source
-  Additional modifications thanks to Virus of Haxxor World
 */
 
 #include <errno.h>
