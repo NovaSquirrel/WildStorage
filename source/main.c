@@ -57,7 +57,7 @@ void upload_pattern_palette();
 // ------------------------------------------------------------------------------------------------
 // Strings
 const char *main_menu_options[] = {"Save/Load", "Item storage", "Patterns", "Map", "House", "Utilities", "Edit player", "Quit"};
-const char *file_options[] = {"Load file", "Save file", "Save backup", "Load from cartridge", "Save to cartridge"};
+const char *file_options[] = {"Load file", "Save file", "Save backup", "Load from cartridge", "Save to cartridge", "Eject cartridge"};
 const char *title_screen_options[] = {"Load from SD card", "Load from cartridge", "Quit"};
 
 // ------------------------------------------------------------------------------------------------
@@ -79,6 +79,8 @@ u16 *mainBGMapBehind;
 u16 *subBGMapText;
 u16 *subBGMap256;
 u16 *subBGMapBehind;
+
+static bool cartridge_initialized = false;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -237,15 +239,49 @@ int verify_cartridge_flash_type() {
 	return 0;
 }
 
-int load_cartridge() {
+int init_cartridge() {
+	if(cartridge_initialized)
+		return 1;
+
+	sysSetCardOwner(BUS_OWNER_ARM9); // Give cartridge slot control to ARM9
+	if (isDSiMode()) {
+		// Reset cartridge slot
+		disableSlot1();
+		enableSlot1();
+		for (int i = 0; i < 20; i++) swiWaitForVBlank();
+	}
+
+	// The first commands to run after initializing the cartridge read the
+	// header. However, the cartridge may already be initialized on DS,
+	// in which case we might need to prompt the user to eject and reinsert
+	// it. Read the header twice to detect this, as this won't work right
+	// with a fully booted cartridge.
+	uint8_t header[2][512];
+	cardReadHeader(header[0]);
+	cardReadHeader(header[1]);
+	if(memcmp(header[0], header[1], 512)) {
+		popup_notice("Please eject and re-insert card");
+		return 0;
+	}
+
+	// The cartridge is detected and reset. Is it a valid cartridge type?
 	if(!verify_cartridge_flash_type())
+		return 0;
+
+	cartridge_initialized = true;
+	return 1;
+}
+
+
+int load_cartridge() {
+	if(!init_cartridge())
 		return 0;
 	cardReadEeprom(0, savefile, sizeof(savefile), 3); // 3 = flash
 	return verify_loaded_savefile();
 }
 
 int save_cartridge() {
-	if(!verify_cartridge_flash_type())
+	if(!init_cartridge())
 		return 0;
 	fix_checksum();
 	cardEepromChipErase();
@@ -311,6 +347,10 @@ void menu_save_load() {
 			if(confirm_choice("Save to cartridge?") == 1 && save_cartridge()) {
 				popup_notice("Saved to cart! Hopefully");
 			}
+			break;
+		case 5: // Eject cartridge
+			cartridge_initialized = false;
+			popup_notice("Ejected cartridge!");
 			break;
 	}
 }
