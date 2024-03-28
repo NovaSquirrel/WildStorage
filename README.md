@@ -1,5 +1,5 @@
 # WildStorage
-This is a save editor for ACWW which runs on the DS. Its main purpose is to provide extra space to store items and patterns, but it can also do general save editing and cheat stuff too. It can work on saves that are already on the flashcart, and it _should_ work on real ACWW cartridges, but this has not been fully tested.
+This is a save editor for ACWW which runs on the DS. Its main purpose is to provide extra space to store items and patterns, but it can also do general save editing and cheat stuff too. It can work on saves that are already on the flashcart, as well as directly on real cartridges. If you are using a real cartridge, you will need to use a DSi, 3DS, or a DS flashcart that goes in the DS's GBA slot.
 
 Item management features:
 * Edit inventories, mail presents, wardrobes/closets, lost and found, recycler, Nook's shop
