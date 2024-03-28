@@ -4,7 +4,7 @@
 extern char filename[200];
 extern char full_file_path[256];
 extern char title_buffer[32];
-extern char text_conversion_buffer[40];
+extern char text_conversion_buffer[64];
 extern int current_player;
 extern int player_offset;
 extern u8 savefile[256 * 1024];
@@ -24,6 +24,8 @@ const char *player_name(int which);
 const char *player_name_or_null(int which);
 const char *town_name();
 const char *text_from_save(int index, int length);
+void fix_invalid_filename_chars(char *buffer);
+const char *town_name_for_filename();
 
 int confirm_choice(const char *prompt);
 int confirm_choice_on_screen(u16 *screen, const char *prompt);
@@ -47,14 +49,12 @@ int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choice
 int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item);
 void wait_for_start();
 void wait_vblank_and_animate();
+void upload_pattern_palette();
 
 extern const char *ok_options[];
 
 const char *name_for_item(unsigned short item_id);
 unsigned short icon_for_item(unsigned short item_id);
-#define AREA_NOT_AVAILABLE 0xf030
-#define EMPTY_ITEM 0xfff1
-#define INVALID_ITEM_SLOT 0xffff
 
 // Special tileset characters
 enum {
@@ -84,13 +84,29 @@ enum {
 	TILE_SELECTION_BOX_TOP_LEFT = 0xe7,
 	TILE_SELECTION_BOX_TOP      = 0xe8,
 	TILE_SELECTION_BOX_LEFT     = 0xe9,
+	TILE_BORDER_GRAY_CORNER = 0xf9,
+	TILE_BORDER_GRAY_VERT   = 0xfa,
+	TILE_BORDER_GRAY_HORIZ  = 0xfb,
 };
 
-#define TOWN_SAVE_SIZE 0x15FE0
-#define PER_PLAYER_OFFSET 8844
+#define SPRITE_MAIN_TILE_POINTER(num) (&SPRITE_GFX[16*num])
+#define SPRITE_SUB_TILE_POINTER(num) (&SPRITE_GFX_SUB[16*num])
 
 #define EXTRA_STORAGE_SIZE 1500
 #define EXTRA_PATTERN_STORAGE_SIZE 1024
 
+// Item code related
+#define FURNITURE_FACING_DOWN  0
+#define FURNITURE_FACING_RIGHT 1
+#define FURNITURE_FACING_UP    2
+#define FURNITURE_FACING_LEFT  3
+
+#define AREA_NOT_AVAILABLE 0xf030
+#define EMPTY_ITEM 0xfff1
+#define INVALID_ITEM_SLOT 0xffff
+
+// Savefile offsets
+#define TOWN_SAVE_SIZE 0x15FE0
+#define PER_PLAYER_OFFSET 8844
 #define TOWN_ITEM_GRID_START 0x0C354
 #define TOWN_ITEM_GRID_END   0x0E352

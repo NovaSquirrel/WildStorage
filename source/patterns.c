@@ -170,8 +170,13 @@ bool edited_extra_patterns = false;
 extern bool has_acww_folder;
 int makeFolder(const char *path);
 
+void upload_pattern_palette() {
+	dmaCopy(pattern_shared_colors,   BG_PALETTE+PATTERN_SHARED_COLOR_STARTS_AT,     sizeof(pattern_shared_colors));
+	dmaCopy(pattern_shared_colors,   BG_PALETTE_SUB+PATTERN_SHARED_COLOR_STARTS_AT, sizeof(pattern_shared_colors));
+}
+
 void load_extra_patterns() {
-	const char *town = town_name();
+	const char *town = town_name_for_filename();
 
 	// Empty out the array first
 	memset(extra_pattern_storage, 0, sizeof(extra_pattern_storage));
@@ -186,7 +191,7 @@ void load_extra_patterns() {
 }
 
 void save_extra_patterns() {
-	const char *town = town_name();
+	const char *town = town_name_for_filename();
 
 	if(edited_extra_patterns) {
 		sprintf(full_file_path, "%sextra_%s_patterns.bin", acww_folder_prefix, town);
@@ -248,10 +253,10 @@ void pattern_tiles_at(u16 *map, int base_x, int base_y, int initial) {
 }
 
 void draw_selection_box_at(u16 *map, int x, int y) {
-	map_put(map, x,   y, TILE_SELECTION_BOX_TOP_LEFT);
-	map_put(map, x+1, y, TILE_SELECTION_BOX_TOP);
-	map_put(map, x+2, y, TILE_SELECTION_BOX_TOP);
-	map_put(map, x+3, y, TILE_SELECTION_BOX_TOP_LEFT | TILE_FLIP_H);
+	map_put(map, x,   y,   TILE_SELECTION_BOX_TOP_LEFT);
+	map_put(map, x+1, y,   TILE_SELECTION_BOX_TOP);
+	map_put(map, x+2, y,   TILE_SELECTION_BOX_TOP);
+	map_put(map, x+3, y,   TILE_SELECTION_BOX_TOP_LEFT | TILE_FLIP_H);
 	map_put(map, x,   y+1, TILE_SELECTION_BOX_LEFT);
 	map_put(map, x+3, y+1, TILE_SELECTION_BOX_LEFT | TILE_FLIP_H);
 	map_put(map, x,   y+2, TILE_SELECTION_BOX_LEFT);
@@ -330,9 +335,6 @@ void menu_patterns() {
 
 	redraw_pattern_manager_top_screen(1, 1);
 	redraw_pattern_manager_bottom_screen(1, 1);
-
-	dmaCopy(pattern_shared_colors,   BG_PALETTE+PATTERN_SHARED_COLOR_STARTS_AT,     sizeof(pattern_shared_colors));
-	dmaCopy(pattern_shared_colors,   BG_PALETTE_SUB+PATTERN_SHARED_COLOR_STARTS_AT, sizeof(pattern_shared_colors));
 
 	// ------------------------------------------
 
@@ -491,6 +493,9 @@ void menu_patterns() {
 						acstrDecode(name_buffer,   pattern->pattern_name,     16);
 						acstrDecode(town_buffer,   pattern->author_town.name, 8);
 						acstrDecode(author_buffer, pattern->author.name,      8);
+						fix_invalid_filename_chars(name_buffer);
+						fix_invalid_filename_chars(author_buffer);
+						fix_invalid_filename_chars(town_buffer);
 						sprintf(full_file_path, "%s%s by %s in %s.acww", pattern_folder_prefix, name_buffer, author_buffer, town_buffer);
 
 						int is_ok = 1;
@@ -540,7 +545,7 @@ void menu_patterns() {
 						break;
 					case 7: // Delete
 					{
-						char delete_buffer[64];
+						char delete_buffer[100];
 						acstrDecode(text_conversion_buffer, pattern->pattern_name, 16);
 						sprintf(delete_buffer, "Really delete %s?", text_conversion_buffer);
 						if(confirm_choice_on_screen(screen, delete_buffer) == 1) {

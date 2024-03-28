@@ -3512,6 +3512,7 @@ int item_comparator(const void *a, const void *b) {
 }
 
 u16 strip_bottom_bits_on_furniture(u16 item) {
+	// The bottom two bits on furniture items are used to store a rotation
 	if(item >= 0x3000 && item <= 0x4fff)
 		return item & 0xfffc;
 	return item;

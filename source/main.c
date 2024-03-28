@@ -36,6 +36,7 @@
 
 #include <my_font.h>
 #include <background.h>
+#include <sprites.h>
 
 // ------------------------------------------------------------------------------------------------
 // Prototypes
@@ -43,15 +44,19 @@ void menu_storage();
 void menu_player_edit();
 void menu_utility();
 void menu_patterns();
+void menu_townmap();
+void menu_house();
+
 void load_extra_storage();
 void save_extra_storage();
 void load_extra_patterns();
 void save_extra_patterns();
 const char *getNeighborName(size_t id);
+void upload_pattern_palette();
 
 // ------------------------------------------------------------------------------------------------
 // Strings
-const char *main_menu_options[] = {"Save/Load", "Storage", "Map", "Patterns", "House", "Utilities", "Edit player", "Quit"};
+const char *main_menu_options[] = {"Save/Load", "Item storage", "Patterns", "Map", "House", "Utilities", "Edit player", "Quit"};
 const char *file_options[] = {"Load file", "Save file", "Save backup", "Load from cartridge", "Save to cartridge"};
 const char *title_screen_options[] = {"Load from SD card", "Load from cartridge", "Quit"};
 
@@ -84,6 +89,28 @@ const char *text_from_save(int index, int length) {
 
 const char *town_name() {
 	return text_from_save(4, 8);
+}
+
+void fix_invalid_filename_chars(char *buffer) {
+	for(char *p = text_conversion_buffer; *p; p++) {
+		switch(*p) {
+			case '\\':
+			case '/':
+			case ':':
+			case '*':
+			case '?':
+			case '|': *p = '-'; break;
+			case '"': *p = '\''; break;
+			case '<': *p = '('; break;
+			case '>': *p = ')'; break;
+		}
+	}
+}
+
+const char *town_name_for_filename() {
+	text_from_save(4, 8);
+	fix_invalid_filename_chars(text_conversion_buffer);
+	return text_conversion_buffer;
 }
 
 void show_town_information_on_top_screen() {
@@ -159,6 +186,9 @@ int reload_savefile() {
 int background_scroll = 0;
 void wait_vblank_and_animate() {
 	swiWaitForVBlank();
+	oamUpdate(&oamMain);
+	oamUpdate(&oamSub);
+
 	background_scroll++;
 	int background_scroll_slower = background_scroll / 8;
 	bgSetScroll(mainBGBehind, background_scroll_slower, background_scroll_slower);
@@ -232,7 +262,7 @@ void get_backup_filename() {
 	timer = time(NULL);
 	tm_info = localtime(&timer);
 	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H-%M.sav", tm_info);
-	sprintf(full_file_path, "%s%s %s", acww_folder_prefix, town_name(), buffer);
+	sprintf(full_file_path, "%s%s %s", acww_folder_prefix, town_name_for_filename(), buffer);
 }
 
 void menu_save_load() {
@@ -285,14 +315,6 @@ void menu_save_load() {
 	}
 }
 
-void menu_map() {
-
-}
-
-void menu_house() {
-
-}
-
 int makeFolder(const char *path) {
 	// from RAC by PinoBatch
 	if(mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
@@ -335,6 +357,7 @@ int main(int argc, char **argv) {
     subBGMap256     = (u16*)bgGetMapPtr(subBG256);
     subBGMapBehind  = (u16*)bgGetMapPtr(subBGBehind);
 
+	// Set up background data
 	dmaCopy(my_fontTiles,    bgGetGfxPtr(mainBGText)  ,sizeof(my_fontTiles));
 	dmaFillHalfWords(0,      bgGetGfxPtr(mainBG256),   64);
 	dmaCopy(backgroundTiles, bgGetGfxPtr(mainBGBehind),sizeof(backgroundTiles));
@@ -345,10 +368,22 @@ int main(int argc, char **argv) {
 	dmaCopy(my_fontPal,      BG_PALETTE_SUB,           sizeof(my_fontPal));
 	dmaCopy(backgroundPal,   BG_PALETTE+16,            sizeof(backgroundPal));
 	dmaCopy(backgroundPal,   BG_PALETTE_SUB+16,        sizeof(backgroundPal));
+	upload_pattern_palette();
+
+	// Set up sprite data
+	dmaCopy(spritesTiles,    SPRITE_GFX,               sizeof(spritesTiles));
+	dmaCopy(spritesTiles,    SPRITE_GFX_SUB,           sizeof(spritesTiles));
+	dmaCopy(my_fontPal,      SPRITE_PALETTE,           sizeof(my_fontPal));
+	dmaCopy(my_fontPal,      SPRITE_PALETTE_SUB,       sizeof(my_fontPal));
+
 	clear_screen_256(mainBGMap256);
 	clear_screen_256(subBGMap256);
 	setup_scrolling_background(mainBGMapBehind);
 	setup_scrolling_background(subBGMapBehind);
+
+	// Set up OAM
+	oamInit(&oamMain, SpriteMapping_1D_32, false);
+	oamInit(&oamSub, SpriteMapping_1D_32, false);
 
     setBrightness(3, 0); // Both screens full brightness
 
@@ -419,6 +454,8 @@ int main(int argc, char **argv) {
 		int new_menu_y = choose_from_list(title_buffer, main_menu_options, 8, main_menu_y);
 		if(new_menu_y >= 0)
 			main_menu_y = new_menu_y;
+		else
+			continue;
 		switch(main_menu_y) {
 			case 0:
 				menu_save_load();
@@ -427,10 +464,10 @@ int main(int argc, char **argv) {
 				menu_storage();
 				break;
 			case 2:
-				menu_map();
+				menu_patterns();
 				break;
 			case 3:
-				menu_patterns();
+				menu_townmap();
 				break;
 			case 4:
 				menu_house();
@@ -443,10 +480,9 @@ int main(int argc, char **argv) {
 				break;
 			case 7:
 				return 0;
-			default:
-				main_menu_y = 0;
-				break;
 		}
+		oamClear(&oamMain, 0, 0);
+		oamClear(&oamSub, 0, 0);
 		show_town_information_on_top_screen();
 	}
 }

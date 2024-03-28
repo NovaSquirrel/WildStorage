@@ -95,7 +95,7 @@ u16 *current_storage_swap_screen_map() {
 }
 
 void load_extra_storage() {
-	const char *town = town_name();
+	const char *town = town_name_for_filename();
 
 	for(int i=0; i<3; i++) {
 		// Empty out the array first
@@ -114,7 +114,7 @@ void load_extra_storage() {
 }
 
 void save_extra_storage() {
-	const char *town = town_name();
+	const char *town = town_name_for_filename();
 
 	for(int i=0; i<3; i++) {
 		if(edited_extra_storage[i]) {
