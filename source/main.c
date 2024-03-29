@@ -302,7 +302,7 @@ void get_backup_filename() {
 }
 
 void menu_save_load() {
-	switch(choose_from_list("Save/Load", file_options, 5, 0)) {
+	switch(choose_from_list("Save/Load", file_options, 6, 0)) {
 		case 0: // Load
 			if(choose_file(SAVE_FILES) == 1) {
 				reload_savefile();
