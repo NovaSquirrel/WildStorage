@@ -84,7 +84,7 @@ const size_t inventory_size[] = {
 	15, 90, 10,
 	15, 90, 10,
 	15, 90, 10,
-	15, 15, 36,
+	15, 15, 37,
 	EXTRA_STORAGE_SIZE, EXTRA_STORAGE_SIZE, EXTRA_STORAGE_SIZE,
 };
 
