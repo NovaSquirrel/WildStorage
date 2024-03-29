@@ -90,6 +90,50 @@ const size_t inventory_size[] = {
 
 // Functions ------------------------------------
 
+int edit_item_menu(u16 *map, u16 item, int include_sort) {
+	char buffer[32];
+	sprintf(buffer, "Edit: Item %.4x", item);
+	int edit_type = choose_from_list_on_screen(map, buffer, edit_item_options, 5 + include_sort, edit_type_index);
+	if(edit_type >= 0) {
+		edit_type_index = edit_type;
+
+		switch(edit_type) {
+			case 0: // Choose
+			{
+				int new_item = choose_item_from_all_on_screen(map, "Select an item to put here", item);
+				if(new_item >= 0) {
+					item = new_item;
+				}
+				break;
+			}
+			case 1: // Choose (with category)
+			{
+				int which_category = choose_from_list_on_screen(map, "Which category?", edit_item_category_names, 18, edit_item_category);
+				if(which_category >= 0) {
+					edit_item_category = which_category;
+					int new_item = choose_item_from_all_on_screen(map, "Select an item to put here", edit_item_category_values[which_category]);
+					if(new_item >= 0) {
+						item = new_item;
+					}
+				}
+				break;
+			}
+			case 2: // Delete
+				item = EMPTY_ITEM;
+				break;
+			case 3: // Copy
+				edit_item_copy = item;
+				break;
+			case 4: // Paste
+				item = edit_item_copy;
+				break;
+			case 5: // Sort this inventory
+				return -1;
+		}
+	}
+	return item;
+}
+
 u16 *current_storage_swap_screen_map() {
 	return storage_swap_screen ? mainBGMapText : subBGMapText;
 }
@@ -424,52 +468,17 @@ void menu_storage() {
 		if(keys_down & KEY_X) {
 			storage_swapping = false;
 			int index_to_change = storage_page[storage_screen]*15+storage_y;
-			u16 initial_item = get_inventory_item(storage_screen_inventory[storage_screen], index_to_change);
+			u16 item = get_inventory_item(storage_screen_inventory[storage_screen], index_to_change);
 
-			char buffer[32];
-			sprintf(buffer, "Edit: Item %.4x", initial_item);
-			int edit_type = choose_from_list_on_screen(storage_map, buffer, edit_item_options, 6, edit_type_index);
-			if(edit_type >= 0) {
-				edit_type_index = edit_type;
-
-				switch(edit_type) {
-					case 0: // Choose
-					{
-						int new_item = choose_item_from_all_on_screen(storage_map, "Select an item to put here", initial_item);
-						if(new_item >= 0) {
-							set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
-						}
-						break;
-					}
-					case 1: // Choose (with category)
-					{
-						int which_category = choose_from_list_on_screen(storage_map, "Which category?", edit_item_category_names, 18, edit_item_category);
-						if(which_category >= 0) {
-							edit_item_category = which_category;
-							int new_item = choose_item_from_all_on_screen(storage_map, "Select an item to put here", edit_item_category_values[which_category]);
-							if(new_item >= 0) {
-								set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
-							}
-						}
-						break;
-					}
-					case 2: // Delete
-						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, EMPTY_ITEM);
-						break;
-					case 3: // Copy
-						edit_item_copy = initial_item;
-						break;
-					case 4: // Paste
-						set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, edit_item_copy);
-						break;
-					case 5: // Sort this inventory
-						if(sort_inventory(storage_screen_inventory[storage_screen]) == 1) {
-							popup_noticef_on_screen(storage_map, "Sorted %s!", storage_inventory_names[storage_screen_inventory[storage_screen]]);
-						} else {
-							popup_noticef_on_screen(storage_map, "That inventory isn't sortable");
-						}
-						break;
+			int new_item = edit_item_menu(storage_map, item, 1);
+			if(new_item == -1) {
+				if(sort_inventory(storage_screen_inventory[storage_screen]) == 1) {
+					popup_noticef_on_screen(storage_map, "Sorted %s!", storage_inventory_names[storage_screen_inventory[storage_screen]]);
+				} else {
+					popup_noticef_on_screen(storage_map, "That inventory isn't sortable");
 				}
+			} else if(new_item != item) {
+				set_inventory_item(storage_screen_inventory[storage_screen], index_to_change, new_item);
 			}
 			redraw_storage_screens();
 		}
@@ -498,3 +507,4 @@ void menu_storage() {
 			return;
 	}
 }
+

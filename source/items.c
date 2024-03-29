@@ -3406,7 +3406,7 @@ enum {
 unsigned short icon_for_item(unsigned short item_id) {
 	if(item_id == 0xfff1)
 		return ICON_EMPTY;
-	if(item_id == 0xf030)
+	if(item_id == 0xf030 || item_id == 0xf031)
 		return ICON_SPACE_USED;
 	if(item_id >= 0x0000 && item_id <= 0x0024) { // Small plants and weeds
 		if(item_id == 0x001b || item_id >= 0x001f)

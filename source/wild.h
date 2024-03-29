@@ -27,6 +27,7 @@ const char *text_from_save(int index, int length);
 void fix_invalid_filename_chars(char *buffer);
 const char *town_name_for_filename();
 
+// Menus
 int confirm_choice(const char *prompt);
 int confirm_choice_on_screen(u16 *screen, const char *prompt);
 int popup_notice(const char *prompt);
@@ -37,6 +38,8 @@ int popup_noticef_on_screen(u16 *map, const char *fmt, ...);
 #define PATTERN_FILES 2
 int choose_file(int file_type);
 int choose_file_on_screen(u16 *map, int file_type);
+int edit_item_menu(u16 *screen, u16 item, int include_sort);
+
 void clear_screen(u16 *screen);
 void clear_screen_256(u16 *map);
 void map_print(u16 *map, int x, int y, const char *text);
@@ -110,3 +113,4 @@ enum {
 #define PER_PLAYER_OFFSET 8844
 #define TOWN_ITEM_GRID_START 0x0C354
 #define TOWN_ITEM_GRID_END   0x0E352
+#define YOUR_HOUSE_START 0xE558

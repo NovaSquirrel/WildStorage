@@ -9,6 +9,9 @@ BLOCKSDS	?= /opt/blocksds/core
 NAME		:= wildstorage
 GAME_TITLE	:= Wild Storage
 
+# Disable floating-point printf/scanf to reduce ROM usage.
+DEFINES     := -DPICOLIBC_LONG_LONG_PRINTF_SCANF
+
 # Source code paths
 # -----------------
 
