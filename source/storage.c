@@ -142,7 +142,7 @@ u16 get_savefile_u16(int index) {
 }
 
 u16 get_inventory_item(int inventory, int slot) {
-	if(slot > inventory_size[inventory])
+	if(slot >= inventory_size[inventory])
 		return 0xffff; // Unavailable slot
 	switch(inventory) {
 		case 0:	 return get_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*0 + slot*2); // Inventory
