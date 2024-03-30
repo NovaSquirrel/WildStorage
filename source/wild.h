@@ -53,6 +53,7 @@ int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_ite
 void wait_for_start();
 void wait_vblank_and_animate();
 void upload_pattern_palette();
+void set_default_video_mode();
 
 extern const char *ok_options[];
 
@@ -91,9 +92,14 @@ enum {
 	TILE_BORDER_GRAY_VERT   = 0xfa,
 	TILE_BORDER_GRAY_HORIZ  = 0xfb,
 };
+#define TILE_BASE_PATTERN_TOOLS 0x100
 
 #define SPRITE_MAIN_TILE_POINTER(num) (&SPRITE_GFX[16*num])
 #define SPRITE_SUB_TILE_POINTER(num) (&SPRITE_GFX_SUB[16*num])
+#define PATTERN_SHARED_COLOR_COUNT 168
+#define PATTERN_SHARED_COLOR_STARTS_AT 32
+extern const unsigned char  pattern_map_to_shared[];
+extern const unsigned short pattern_shared_colors[] __attribute__((aligned(4)));
 
 #define EXTRA_STORAGE_SIZE 1500
 #define EXTRA_PATTERN_STORAGE_SIZE 1024

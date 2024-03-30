@@ -46,6 +46,7 @@ void menu_utility();
 void menu_patterns();
 void menu_townmap();
 void menu_house();
+void pattern_editor();
 
 void load_extra_storage();
 void save_extra_storage();
@@ -58,7 +59,7 @@ void upload_pattern_palette();
 // Strings
 const char *main_menu_options[] = {"Save/Load", "Item storage", "Patterns", "Map", "House", "Utilities", "Edit player", "Quit"};
 const char *file_options[] = {"Load file", "Save file", "Save backup", "Load from cartridge", "Save to cartridge", "Eject cartridge"};
-const char *title_screen_options[] = {"Load from SD card", "Load from cartridge", "Quit"};
+const char *title_screen_options[] = {"Load from SD card", "Load from cartridge", "Draw patterns", "Quit"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -365,6 +366,36 @@ int makeFolder(const char *path) {
 	return 0;
 }
 
+void set_default_video_mode() {
+	// https://mtheall.com/vram.html#T0=2&NT0=1024&MB0=0&TB0=1&S0=1&T2=2&NT2=512&MB2=4&TB2=7&S2=2&T3=1&NT3=1024&MB3=2&TB3=3&S3=1
+	videoSetMode(MODE_0_2D);
+	mainBGText   = bgInit(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
+	mainBGBehind = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
+	mainBG256    = bgInit(3, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
+	bgSetPriority(mainBGText,   0);
+	bgSetPriority(mainBG256,    1);
+	bgSetPriority(mainBGBehind, 2);
+
+	videoSetModeSub(MODE_0_2D);
+	subBGText    = bgInitSub(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
+	subBGBehind  = bgInitSub(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
+	subBG256     = bgInitSub(3, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
+	bgSetPriority(subBGText,   0);
+	bgSetPriority(subBG256,    1);
+	bgSetPriority(subBGBehind, 2);
+
+    mainBGMapText   = (u16*)bgGetMapPtr(mainBGText);
+    mainBGMap256    = (u16*)bgGetMapPtr(mainBG256);
+    mainBGMapBehind = (u16*)bgGetMapPtr(mainBGBehind);
+    subBGMapText    = (u16*)bgGetMapPtr(subBGText);
+    subBGMap256     = (u16*)bgGetMapPtr(subBG256);
+    subBGMapBehind  = (u16*)bgGetMapPtr(subBGBehind);
+
+	// Set up OAM
+	oamInit(&oamMain, SpriteMapping_1D_32, false);
+	oamInit(&oamSub, SpriteMapping_1D_32, false);
+}
+
 int main(int argc, char **argv) {
 	lcdMainOnBottom();
 	keysSetRepeat(16, 5);
@@ -379,23 +410,7 @@ int main(int argc, char **argv) {
 	vramSetBankH(VRAM_H_LCD);
 	vramSetBankI(VRAM_I_LCD);
 
-	// https://mtheall.com/vram.html#T0=2&NT0=1024&MB0=0&TB0=1&S0=1&T1=1&NT1=1024&MB1=2&TB1=3&S1=1&T2=2&NT2=512&MB2=4&TB2=7&S2=2
-	videoSetMode(MODE_0_2D);
-	mainBGText   = bgInit(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
-	mainBG256    = bgInit(1, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
-	mainBGBehind = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
-
-	videoSetModeSub(MODE_0_2D);
-	subBGText    = bgInitSub(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
-	subBG256     = bgInitSub(1, BgType_Text8bpp, BgSize_T_512x256, 2, 3);
-	subBGBehind  = bgInitSub(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
-
-    mainBGMapText   = (u16*)bgGetMapPtr(mainBGText);
-    mainBGMap256    = (u16*)bgGetMapPtr(mainBG256);
-    mainBGMapBehind = (u16*)bgGetMapPtr(mainBGBehind);
-    subBGMapText    = (u16*)bgGetMapPtr(subBGText);
-    subBGMap256     = (u16*)bgGetMapPtr(subBG256);
-    subBGMapBehind  = (u16*)bgGetMapPtr(subBGBehind);
+	set_default_video_mode();
 
 	// Set up background data
 	dmaCopy(my_fontTiles,    bgGetGfxPtr(mainBGText)  ,sizeof(my_fontTiles));
@@ -421,13 +436,11 @@ int main(int argc, char **argv) {
 	setup_scrolling_background(mainBGMapBehind);
 	setup_scrolling_background(subBGMapBehind);
 
-	// Set up OAM
-	oamInit(&oamMain, SpriteMapping_1D_32, false);
-	oamInit(&oamSub, SpriteMapping_1D_32, false);
-
     setBrightness(3, 0); // Both screens full brightness
 
 	//keyboardShow();
+
+	pattern_editor();
 
 	bool init_ok = fatInitDefault();
 	if(!init_ok) {
@@ -482,7 +495,11 @@ int main(int argc, char **argv) {
 				}
 				break;
 			}
-			case 2: // quit
+			case 2: // Draw patterns
+			{
+				break;
+			}
+			case 3: // Quit
 				return 0;
 		}
 	}

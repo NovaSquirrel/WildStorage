@@ -35,10 +35,6 @@ const char *room_names[] = {"Main", "North", "East", "West", "Upstairs"};
 // ------------------------------------------------------------------------------------------------
 // Functions
 
-void menu_townmap() {
-
-}
-
 void draw_house_grid_on_map(u16 *map, int map_x, int map_y, int offset, int size_guide) {
 	map_rectfill(map, map_x, map_y, 16, 16, ' ');
 

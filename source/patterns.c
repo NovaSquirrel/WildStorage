@@ -76,9 +76,6 @@ print("  " + ", ".join(["0x%.4x" % convert_to_bgr555(x) for x in shared_color_li
 print("};")
 */
 
-#define PATTERN_SHARED_COLOR_COUNT 168
-#define PATTERN_SHARED_COLOR_STARTS_AT 32
-
 const unsigned char  pattern_map_to_shared[] = {
   0,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,
   0,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  45,  46,
