@@ -24,6 +24,7 @@
 */
 #include <nds.h>
 #include "wild.h"
+#include "acstr.h"
 
 // ------------------------------------------------------------------------------------------------
 // Strings
@@ -31,7 +32,7 @@
 // ------------------------------------------------------------------------------------------------
 // Variables
 
-u8 pattern_edit_data[32][16]; // data[row][column], where each byte has the left pixel in the lower nybble and right pixel in the upper nybble
+struct acww_pattern edited_pattern;
 int pattern_edit_palette = 0;
 
 #define NUM_PATTERN_EDIT_UNDO_STEPS 12
@@ -111,7 +112,7 @@ void redraw_edited_pattern() {
 	// Draw pattern
 	for(int y=0; y<32; y++) {
 		for(int x=0; x<16; x++) {
-			u8 byte = pattern_edit_data[y][x];
+			u8 byte = edited_pattern.data[y][x];
 			u8 left_pixel  = pattern_map_to_shared[pattern_edit_palette*16 + (byte & 15)];
 			u8 right_pixel = pattern_map_to_shared[pattern_edit_palette*16 + (byte >> 4)];
 
@@ -142,11 +143,11 @@ void draw_pattern_editor_tool_page(int page) {
 void create_pattern_undo_step() {
 	if(current_undo_step == NUM_PATTERN_EDIT_UNDO_STEPS) {
 		for(int i=0; i<NUM_PATTERN_EDIT_UNDO_STEPS-1; i++) {
-			memcpy(pattern_edit_undo_steps[i], pattern_edit_undo_steps[i+1], sizeof(pattern_edit_data));
+			memcpy(pattern_edit_undo_steps[i], pattern_edit_undo_steps[i+1], sizeof(edited_pattern.data));
 		}
-		memcpy(pattern_edit_undo_steps[NUM_PATTERN_EDIT_UNDO_STEPS-1], pattern_edit_data, sizeof(pattern_edit_data));
+		memcpy(pattern_edit_undo_steps[NUM_PATTERN_EDIT_UNDO_STEPS-1], edited_pattern.data, sizeof(edited_pattern.data));
 	} else {
-		memcpy(pattern_edit_undo_steps[current_undo_step], pattern_edit_data, sizeof(pattern_edit_data));
+		memcpy(pattern_edit_undo_steps[current_undo_step], edited_pattern.data, sizeof(edited_pattern.data));
 		current_undo_step++;
 	}
 	redo_step_index = -1;
@@ -156,18 +157,18 @@ void put_pattern_pixel(int x, int y, u8 color) {
 	x &= 31;
 	y &= 31;
 	if(x & 1)
-		pattern_edit_data[y][x/2] = (pattern_edit_data[y][x/2] & 0x0f) | (color << 4);
+		edited_pattern.data[y][x/2] = (edited_pattern.data[y][x/2] & 0x0f) | (color << 4);
 	else
-		pattern_edit_data[y][x/2] = (pattern_edit_data[y][x/2] & 0xf0) | color;
+		edited_pattern.data[y][x/2] = (edited_pattern.data[y][x/2] & 0xf0) | color;
 }
 
 u8 get_pattern_pixel(int x, int y) {
 	x &= 31;
 	y &= 31;
 	if(x & 1)
-		return pattern_edit_data[y][x/2] >> 4;
+		return edited_pattern.data[y][x/2] >> 4;
 	else
-		return pattern_edit_data[y][x/2] & 15;
+		return edited_pattern.data[y][x/2] & 15;
 }
 
 void swap_pattern_pixels(int x, int y, int x2, int y2) {
@@ -192,7 +193,23 @@ void pattern_flood_fill(int x, int y, int new_color) {
 
 void pattern_editor() {
 	clear_screen(mainBGMapText);
+	clear_screen(subBGMapText);
 
+	memset(&edited_pattern, 0, sizeof(edited_pattern));
+
+	// Display instructions and info
+	map_print(subBGMapText,  1, 1, "\xe0:Draw \xe1:Pick \xe2:Colors \xe3:Tools");
+	map_print(subBGMapText,  1, 2, "Start:Finish  \xe4\xe5:Switch color");
+	map_print(subBGMapText,  1, 19, "Select:Rename");
+	map_box(subBGMapText,  0,  20, 32, 4);
+	acstrDecode(text_conversion_buffer, edited_pattern.pattern_name, 16);
+	map_print(subBGMapText, 1, 21, text_conversion_buffer);
+	acstrDecode(text_conversion_buffer, edited_pattern.author.name, 8);
+	map_print(subBGMapText, 1, 22, text_conversion_buffer);
+	acstrDecode(text_conversion_buffer, edited_pattern.author_town.name, 8);
+	map_print(subBGMapText, 16, 22, text_conversion_buffer);
+
+	// Set up the main screen
 	videoSetMode(MODE_3_2D);
 	mainBGText   = bgInit(0, BgType_Text4bpp, BgSize_T_512x256, 0, 1);
 	mainBGBehind = bgInit(2, BgType_Text4bpp, BgSize_T_256x256, 4, 7);
@@ -204,16 +221,10 @@ void pattern_editor() {
 	dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256); // Clear whole screen
 	bgSetScroll(mainBGText, 0, -6);
 
-	// Initialize the pattern
-	for(int i=0; i<32; i++) {
-		for(int j=0; j<16; j++) {
-			pattern_edit_data[i][j] = 0xFF;
-		}
-	}
-
 	redraw_edited_pattern();
 	draw_pattern_editor_tool_page(0);
 
+	// Variables
 	int edit_x = 0;
 	int edit_y = 0;
 	int edit_state = 0;
@@ -224,6 +235,7 @@ void pattern_editor() {
 	int tool_when_switching_to_tools = 0;
 	current_undo_step = 0;
 	redo_step_index = -1;
+	pattern_edit_palette = (edited_pattern.unknown2 & 0xf0) >> 4;
 
 	int other_coord_x = 0, other_coord_y = 0;
 	bool have_other_coordinate = false;
@@ -235,6 +247,54 @@ void pattern_editor() {
 		uint32_t keys_down = keysDown();
 		uint32_t keys_repeat = keysDownRepeat();
 		uint32_t keys_held   = keysHeld();
+
+		if(keys_held & KEY_TOUCH) {
+			touchPosition touch;
+			touchRead(&touch);
+
+			if(touch.px > EDIT_PATTERN_CANVAS_X) {
+				if(edit_state == 2) {
+					switch(edit_tool_within_page + edit_tool_page * 10) { // Reset back to old tool
+						case TOOL_LESS_TOOLS:
+						case TOOL_MORE_TOOLS:
+						case TOOL_UNDO:
+						case TOOL_REDO:
+						case TOOL_ROTATE_L:
+						case TOOL_ROTATE_R:
+						case TOOL_HFLIP:
+						case TOOL_VFLIP:
+						case TOOL_PALETTE_PREV:
+						case TOOL_PALETTE_NEXT:
+						case TOOL_UNUSED:
+							edit_tool_page = tool_when_switching_to_tools / 10;
+							edit_tool_within_page = tool_when_switching_to_tools % 10;
+							draw_pattern_editor_tool_page(edit_tool_page);
+							break;
+					}
+				}
+
+				edit_state = 0;
+				edit_x = (touch.px - EDIT_PATTERN_CANVAS_X) / 6;
+				edit_y = touch.py / 6;
+				keys_down |= (keys_down & KEY_TOUCH) ? KEY_A : 0;
+				keys_held |= KEY_A;
+			} else if(touch.px >= EDIT_TOOLS_X && touch.py >= EDIT_TOOLS_Y
+			&& touch.px < EDIT_TOOLS_X+14*4 && touch.py < EDIT_TOOLS_Y + 10*8) {
+				have_other_coordinate = false;
+				if(keys_down & KEY_TOUCH) {
+					if(edit_state == 0) {
+						tool_when_switching_to_tools = edit_tool_within_page + edit_tool_page * 10;
+					}
+					edit_state = 2;
+					edit_tool_within_page = (touch.px - EDIT_TOOLS_X) / 28 + (touch.py - EDIT_TOOLS_Y) / 16 * 2;
+					keys_down |= KEY_A;
+				}
+			} else if(touch.px >= EDIT_PATTERN_COLORS_X && touch.py >= EDIT_PATTERN_COLORS_Y
+			&& touch.px < EDIT_PATTERN_COLORS_X + 14*4 && touch.py < EDIT_PATTERN_COLORS_Y + 14*4 ) {
+				edit_color = (touch.px - EDIT_PATTERN_COLORS_X) / 14 + ((touch.py - EDIT_PATTERN_COLORS_Y) / 14 * 4);
+			}
+		}
+
 		if(keys_held == 0)
 			wait_for_release = false;
 		int edit_tool = edit_tool_within_page + edit_tool_page * 10;
@@ -498,7 +558,7 @@ void pattern_editor() {
 						case TOOL_UNDO:
 							if(current_undo_step > 0) {
 								if(redo_step_index == -1) {
-									bool need_new_step = memcmp(pattern_edit_undo_steps[current_undo_step-1], pattern_edit_data, sizeof(pattern_edit_data));
+									bool need_new_step = memcmp(pattern_edit_undo_steps[current_undo_step-1], edited_pattern.data, sizeof(edited_pattern.data));
 									if(need_new_step)
 										create_pattern_undo_step();
 									redo_step_index = current_undo_step;
@@ -506,14 +566,14 @@ void pattern_editor() {
 										current_undo_step--;
 								}
 								current_undo_step--;
-								memcpy(pattern_edit_data, pattern_edit_undo_steps[current_undo_step], sizeof(pattern_edit_data));
+								memcpy(edited_pattern.data, pattern_edit_undo_steps[current_undo_step], sizeof(edited_pattern.data));
 								pattern_edited = true;
 							}
 							break;
 						case TOOL_REDO:
 							if(redo_step_index > current_undo_step && (current_undo_step != NUM_PATTERN_EDIT_UNDO_STEPS-1)) {
 								current_undo_step++;
-								memcpy(pattern_edit_data, pattern_edit_undo_steps[current_undo_step], sizeof(pattern_edit_data));
+								memcpy(edited_pattern.data, pattern_edit_undo_steps[current_undo_step], sizeof(edited_pattern.data));
 							}
 							pattern_edited = true;
 							break;
@@ -598,7 +658,6 @@ void pattern_editor() {
 			);
 
 		if(have_other_coordinate) {
-			u16 *sprite = SPRITE_MAIN_TILE_POINTER(0);
 			if(edit_tool == TOOL_RECT_LINE || edit_tool == TOOL_RECT_FILL) { // For rectangles, show a rectangle preview
 				int x0 = edit_x < other_coord_x ? edit_x : other_coord_x;
 				int x1 = edit_x > other_coord_x ? edit_x : other_coord_x;
@@ -609,7 +668,7 @@ void pattern_editor() {
 					x0*6+EDIT_PATTERN_CANVAS_X-1, y0*6-1,
 					0,      // Priority
 					0,      // Palette
-					SpriteSize_8x8, SpriteColorFormat_16Color, sprite,
+					SpriteSize_8x8, SpriteColorFormat_16Color, SPRITE_MAIN_TILE_POINTER(0x40),
 					-1, false, false, false, false, false
 					);
 				oamSet(&oamMain,
@@ -617,7 +676,7 @@ void pattern_editor() {
 					x1*6+EDIT_PATTERN_CANVAS_X-1, y0*6-1,
 					0,      // Priority
 					0,      // Palette
-					SpriteSize_8x8, SpriteColorFormat_16Color, sprite,
+					SpriteSize_8x8, SpriteColorFormat_16Color, SPRITE_MAIN_TILE_POINTER(0x42),
 					-1, false, false, false, false, false
 					);
 				oamSet(&oamMain,
@@ -625,7 +684,7 @@ void pattern_editor() {
 					x0*6+EDIT_PATTERN_CANVAS_X-1, y1*6-1,
 					0,      // Priority
 					0,      // Palette
-					SpriteSize_8x8, SpriteColorFormat_16Color, sprite,
+					SpriteSize_8x8, SpriteColorFormat_16Color, SPRITE_MAIN_TILE_POINTER(0x44),
 					-1, false, false, false, false, false
 					);
 				oamSet(&oamMain,
@@ -633,7 +692,7 @@ void pattern_editor() {
 					x1*6+EDIT_PATTERN_CANVAS_X-1, y1*6-1,
 					0,      // Priority
 					0,      // Palette
-					SpriteSize_8x8, SpriteColorFormat_16Color, sprite,
+					SpriteSize_8x8, SpriteColorFormat_16Color, SPRITE_MAIN_TILE_POINTER(0x46),
 					-1, false, false, false, false, false
 					);
 			} else { // Lines just show one coordinate
@@ -642,7 +701,7 @@ void pattern_editor() {
 					other_coord_x*6+EDIT_PATTERN_CANVAS_X-1, other_coord_y*6-1,
 					0,      // Priority
 					0,      // Palette
-					SpriteSize_8x8, SpriteColorFormat_16Color, sprite,
+					SpriteSize_8x8, SpriteColorFormat_16Color, SPRITE_MAIN_TILE_POINTER(0x00),
 					-1, false, false, false, false, false
 					);
 			}
@@ -653,11 +712,14 @@ void pattern_editor() {
 			oamSetHidden(&oamMain, 6, true);
 		}
 
+		map_printf(subBGMapText,  20, 19, "Palette: %d ", pattern_edit_palette+1);
+
 		// Exit
 		if(keys_down & KEY_START)
 			break;
 
 	}
+	edited_pattern.unknown2 =  (edited_pattern.unknown2 & 0x0f) | (pattern_edit_palette << 4);
 
 	set_default_video_mode();
 }

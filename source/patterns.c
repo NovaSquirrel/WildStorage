@@ -100,38 +100,6 @@ const unsigned short pattern_shared_colors[] __attribute__((aligned(4))) = {
 };
 
 // ------------------------------------------------------------------------------------------------
-// Structures
-
-typedef struct acww_name {
-  u16 id;
-  u8 name[8];
-} acww_name;
-
-// Based on the notes in RAC as a starting point
-// 552 byte structure
-struct acww_pattern {
-  u8 data[32][16]; // data[row][column], where each byte has the left pixel in the lower nybble and right pixel in the upper nybble
-
-  struct acww_name author_town;
-  struct acww_name author;
-
-  u16 unknown; // Unknown,seems to be 0 for custom patterns, 1 for the premade you start out with, and a Wendell pattern had $021d?
-
-  u8 pattern_name[16];
-
-  u16 unknown2;
-  // 0000 0000 pppp ????
-  // |||| |||| |||| ++++- Values observed here: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-  // |||| |||| ||||       Might be what gets saved from the three options you get after designing? But there's more than 3 values.
-  // |||| |||| ||||       2 = "Formal, refined"
-  // |||| |||| ||||       9 = "Basic, yet new!"
-  // |||| |||| ||||       0 7 = "Didn't have one"
-  // |||| |||| ||||       Needs more research!
-  // |||| |||| ++++------ Palette used (0-15)
-  // ++++-++++----------- I've only seen zero here so far
-};
-
-// ------------------------------------------------------------------------------------------------
 // Strings
 const char *edit_pattern_options[] = {"Edit pattern", "Load from file", "Save to file", "Copy pattern", "Paste pattern", "Copy author", "Paste author", "Delete", "View pattern info"};
 const char *bottom_screen_pattern_row_names[] = {"Able Sisters", "Villagers", "Town Flag", "Blanca"};
