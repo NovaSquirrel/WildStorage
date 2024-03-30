@@ -34,6 +34,11 @@
 u8 pattern_edit_data[32][16]; // data[row][column], where each byte has the left pixel in the lower nybble and right pixel in the upper nybble
 int pattern_edit_palette = 0;
 
+#define NUM_PATTERN_EDIT_UNDO_STEPS 12
+u8 pattern_edit_undo_steps[NUM_PATTERN_EDIT_UNDO_STEPS][32][16];
+int current_undo_step = 0; // Index of the *next* undo step to write to
+int redo_step_index = -1;
+
 enum {
 	TOOL_1PX,
 	TOOL_2PX,
@@ -134,6 +139,19 @@ void draw_pattern_editor_tool_page(int page) {
 	}
 }
 
+void create_pattern_undo_step() {
+	if(current_undo_step == NUM_PATTERN_EDIT_UNDO_STEPS) {
+		for(int i=0; i<NUM_PATTERN_EDIT_UNDO_STEPS-1; i++) {
+			memcpy(pattern_edit_undo_steps[i], pattern_edit_undo_steps[i+1], sizeof(pattern_edit_data));
+		}
+		memcpy(pattern_edit_undo_steps[NUM_PATTERN_EDIT_UNDO_STEPS-1], pattern_edit_data, sizeof(pattern_edit_data));
+	} else {
+		memcpy(pattern_edit_undo_steps[current_undo_step], pattern_edit_data, sizeof(pattern_edit_data));
+		current_undo_step++;
+	}
+	redo_step_index = -1;
+}
+
 void put_pattern_pixel(int x, int y, u8 color) {
 	x &= 31;
 	y &= 31;
@@ -204,6 +222,8 @@ void pattern_editor() {
 	int edit_color = 0;
 	bool wait_for_release = false;
 	int tool_when_switching_to_tools = 0;
+	current_undo_step = 0;
+	redo_step_index = -1;
 
 	int other_coord_x = 0, other_coord_y = 0;
 	bool have_other_coordinate = false;
@@ -233,6 +253,7 @@ void pattern_editor() {
 					switch(edit_tool) {
 						case TOOL_SWAP_COLORS:
 						{
+							create_pattern_undo_step();
 							u8 swap_color = get_pattern_pixel(edit_x, edit_y);
 							for(int y=0; y<32; y++)
 								for(int x=0; x<32; x++) {
@@ -247,6 +268,7 @@ void pattern_editor() {
 							break;
 						}
 						case TOOL_FLOOD_FILL:
+							create_pattern_undo_step();
 							flood_fill_color = get_pattern_pixel(edit_x, edit_y);
 							if(flood_fill_color != edit_color)
 								pattern_flood_fill(edit_x, edit_y, edit_color);
@@ -260,6 +282,8 @@ void pattern_editor() {
 								int x1 = edit_x > other_coord_x ? edit_x : other_coord_x;
 								int y0 = edit_y < other_coord_y ? edit_y : other_coord_y;
 								int y1 = edit_y > other_coord_y ? edit_y : other_coord_y;
+								if(x0 != x1 || y0 != y1)
+									create_pattern_undo_step();
 								switch(edit_tool) {
 									case TOOL_LINE:
 									{
@@ -325,10 +349,14 @@ void pattern_editor() {
 				if((keys_held & KEY_A) && !wait_for_release) {
 					switch(edit_tool) {
 						case TOOL_1PX:
+							if(keys_down & KEY_A)
+								create_pattern_undo_step();
 							put_pattern_pixel(edit_x, edit_y, edit_color);
 							pattern_edited = true;
 							break;
 						case TOOL_2PX:
+							if(keys_down & KEY_A)
+								create_pattern_undo_step();
 							put_pattern_pixel(edit_x,   edit_y,   edit_color);
 							put_pattern_pixel(edit_x-1, edit_y,   edit_color);
 							put_pattern_pixel(edit_x,   edit_y-1, edit_color);
@@ -337,6 +365,8 @@ void pattern_editor() {
 							break;
 						case TOOL_3PX:
 						{
+							if(keys_down & KEY_A)
+								create_pattern_undo_step();
 							for(int y=0; y<3; y++)
 								for(int x=0; x<3; x++)
 									put_pattern_pixel(edit_x-x, edit_y-y, edit_color);
@@ -345,6 +375,8 @@ void pattern_editor() {
 						}
 						case TOOL_SHIFT:
 						{
+							if(keys_down & KEY_A)
+								create_pattern_undo_step();
 							int offset_x = 0, offset_y = 0;
 							if(keys_repeat & KEY_LEFT) {
 								offset_x = 1;
@@ -462,14 +494,34 @@ void pattern_editor() {
 							edit_tool_page ^= 1;
 							draw_pattern_editor_tool_page(edit_tool_page);
 							break;
+
 						case TOOL_UNDO:
+							if(current_undo_step > 0) {
+								if(redo_step_index == -1) {
+									bool need_new_step = memcmp(pattern_edit_undo_steps[current_undo_step-1], pattern_edit_data, sizeof(pattern_edit_data));
+									if(need_new_step)
+										create_pattern_undo_step();
+									redo_step_index = current_undo_step;
+									if(need_new_step)
+										current_undo_step--;
+								}
+								current_undo_step--;
+								memcpy(pattern_edit_data, pattern_edit_undo_steps[current_undo_step], sizeof(pattern_edit_data));
+								pattern_edited = true;
+							}
 							break;
 						case TOOL_REDO:
+							if(redo_step_index > current_undo_step && (current_undo_step != NUM_PATTERN_EDIT_UNDO_STEPS-1)) {
+								current_undo_step++;
+								memcpy(pattern_edit_data, pattern_edit_undo_steps[current_undo_step], sizeof(pattern_edit_data));
+							}
+							pattern_edited = true;
 							break;
 
 						case TOOL_ROTATE_L:
 						case TOOL_ROTATE_R:
 						{
+							create_pattern_undo_step();
 							u8 temp[32][32];
 							for(int y=0; y<32;y++)
 								for(int x=0; x<32; x++)
@@ -484,6 +536,7 @@ void pattern_editor() {
 							break;
 						}
 						case TOOL_VFLIP:
+							create_pattern_undo_step();
 							for(int y=0; y<16; y++)
 								for(int x=0; x<32; x++) {
 									swap_pattern_pixels(x, y, x, 31-y);
@@ -491,6 +544,7 @@ void pattern_editor() {
 							pattern_edited = true;
 							break;
 						case TOOL_HFLIP:
+							create_pattern_undo_step();
 							for(int y=0; y<31; y++)
 								for(int x=0; x<16; x++) {
 									swap_pattern_pixels(x, y, 31-x, y);
@@ -602,6 +656,7 @@ void pattern_editor() {
 		// Exit
 		if(keys_down & KEY_START)
 			break;
+
 	}
 
 	set_default_video_mode();
