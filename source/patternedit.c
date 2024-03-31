@@ -23,11 +23,14 @@
   SOFTWARE.
 */
 #include <nds.h>
+#include <string.h>
 #include "wild.h"
 #include "acstr.h"
 
 // ------------------------------------------------------------------------------------------------
 // Strings
+const char *rename_menu_options[] = {"Edit name", "Edit author name", "Edit author ID", "Edit town name", "Edit town ID", "Edit mystery value"};
+const char *mystery_options[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -193,21 +196,9 @@ void pattern_flood_fill(int x, int y, int new_color) {
 
 void pattern_editor() {
 	clear_screen(mainBGMapText);
-	clear_screen(subBGMapText);
 
-	memset(&edited_pattern, 0, sizeof(edited_pattern));
-
-	// Display instructions and info
-	map_print(subBGMapText,  1, 1, "\xe0:Draw \xe1:Pick \xe2:Colors \xe3:Tools");
-	map_print(subBGMapText,  1, 2, "Start:Finish  \xe4\xe5:Switch color");
-	map_print(subBGMapText,  1, 19, "Select:Rename");
-	map_box(subBGMapText,  0,  20, 32, 4);
-	acstrDecode(text_conversion_buffer, edited_pattern.pattern_name, 16);
-	map_print(subBGMapText, 1, 21, text_conversion_buffer);
-	acstrDecode(text_conversion_buffer, edited_pattern.author.name, 8);
-	map_print(subBGMapText, 1, 22, text_conversion_buffer);
-	acstrDecode(text_conversion_buffer, edited_pattern.author_town.name, 8);
-	map_print(subBGMapText, 16, 22, text_conversion_buffer);
+	wait_vblank_and_animate();
+	dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256); // Clear whole screen
 
 	// Set up the main screen
 	videoSetMode(MODE_3_2D);
@@ -218,10 +209,8 @@ void pattern_editor() {
 	bgSetPriority(mainBG256,    1);
 	bgSetPriority(mainBGBehind, 2);
 	oamInit(&oamMain, SpriteMapping_1D_32, false);
-	dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256); // Clear whole screen
 	bgSetScroll(mainBGText, 0, -6);
 
-	redraw_edited_pattern();
 	draw_pattern_editor_tool_page(0);
 
 	// Variables
@@ -231,18 +220,38 @@ void pattern_editor() {
 	int edit_tool_within_page = 0;
 	int edit_tool_page = 0;
 	int edit_color = 0;
-	bool wait_for_release = false;
+	bool wait_for_release = true;
 	int tool_when_switching_to_tools = 0;
 	current_undo_step = 0;
 	redo_step_index = -1;
 	pattern_edit_palette = (edited_pattern.unknown2 & 0xf0) >> 4;
+	redraw_edited_pattern();
 
 	int other_coord_x = 0, other_coord_y = 0;
 	bool have_other_coordinate = false;
+	bool redraw_top_screen = true;
 
 	while(1) {
 		wait_vblank_and_animate();
 		scanKeys();
+
+		if(redraw_top_screen) {
+			clear_screen(subBGMapText);
+
+			// Display instructions and info
+			map_print(subBGMapText,  1, 1, "\xe0:Draw \xe1:Pick \xe2:Colors \xe3:Tools");
+			map_print(subBGMapText,  1, 2, "Start:Finish  \xe4\xe5:Switch color");
+			map_print(subBGMapText,  1, 19, "Select:Rename");
+			map_box(subBGMapText,  0,  20, 32, 4);
+			acstrDecode(text_conversion_buffer, edited_pattern.pattern_name, 16);
+			map_print(subBGMapText, 1, 21, text_conversion_buffer);
+			acstrDecode(text_conversion_buffer, edited_pattern.author.name, 8);
+			map_print(subBGMapText, 1, 22, text_conversion_buffer);
+			acstrDecode(text_conversion_buffer, edited_pattern.author_town.name, 8);
+			map_print(subBGMapText, 16, 22, text_conversion_buffer);
+
+			redraw_top_screen = false;
+		}
 
 		uint32_t keys_down = keysDown();
 		uint32_t keys_repeat = keysDownRepeat();
@@ -473,7 +482,7 @@ void pattern_editor() {
 					if(keys_repeat & KEY_DOWN)
 						edit_y = (edit_y + 1) & 31;
 				}
-				if(keys_held & KEY_B)
+				if(keys_held & KEY_B && !wait_for_release)
 					edit_color = get_pattern_pixel(edit_x, edit_y);
 				if(keys_down & KEY_X)
 					edit_state = 1;
@@ -714,6 +723,63 @@ void pattern_editor() {
 
 		map_printf(subBGMapText,  20, 19, "Palette: %d ", pattern_edit_palette+1);
 
+		// Rename
+		if(keys_down & KEY_SELECT) {
+			bgHide(mainBG256);
+			oamClear(&oamMain, 0, 0);
+
+			int rename_option = choose_from_list_on_screen(mainBGMapText, "Rename pattern", rename_menu_options, 6, 0);
+
+			const char *text;
+			int result;
+			switch(rename_option) {
+				case 0: // Edit name
+					acstrDecode(text_conversion_buffer, edited_pattern.pattern_name, 16);
+					text = ask_for_text("Enter a new pattern name:", text_conversion_buffer, 16+1);
+					if(text)
+						ascii_str_to_acww(edited_pattern.pattern_name, text, 16);
+					break;
+				case 1: // Edit author name
+					acstrDecode(text_conversion_buffer, edited_pattern.author.name, 8);
+					text = ask_for_text("Enter a new author name:", text_conversion_buffer, 8+1);
+					if(text)
+						ascii_str_to_acww(edited_pattern.author.name, text, 8);
+					break;
+				case 2: // Edit author ID
+					result = ask_for_u16("Enter a new author ID:", edited_pattern.author.id);
+					if(result >= 0)
+						edited_pattern.author.id = result;
+					break;
+				case 3: // Edit town name
+					acstrDecode(text_conversion_buffer, edited_pattern.author_town.name, 8);
+					text = ask_for_text("Enter a new town name:", text_conversion_buffer, 8+1);
+					if(text)
+						ascii_str_to_acww(edited_pattern.author_town.name, text, 8);
+					break;
+				case 4: // Edit town ID
+					result = ask_for_u16("Enter a new town ID:", edited_pattern.author_town.id);
+					if(result >= 0)
+						edited_pattern.author_town.id = result;
+					break;
+				case 5: // Edit mystery value
+					result = choose_from_list_on_screen(mainBGMapText, "Mystery option?", mystery_options, 16, edited_pattern.unknown2 & 15);
+					if(result >= 0)
+						edited_pattern.unknown2 = (edited_pattern.unknown2 & 0xf0) | result;
+					break;
+			}
+			wait_for_release = true;
+			redraw_top_screen = true;
+
+			// Redraw everything
+			wait_vblank_and_animate();
+			clear_screen(mainBGMapText);
+			dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256); // Clear whole screen
+			redraw_edited_pattern();
+			draw_pattern_editor_tool_page(edit_tool_page);
+			wait_vblank_and_animate();
+			bgShow(mainBG256);
+		}
+
 		// Exit
 		if(keys_down & KEY_START)
 			break;
@@ -721,5 +787,7 @@ void pattern_editor() {
 	}
 	edited_pattern.unknown2 =  (edited_pattern.unknown2 & 0x0f) | (pattern_edit_palette << 4);
 
+	// Clean up
+	dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256);
 	set_default_video_mode();
 }

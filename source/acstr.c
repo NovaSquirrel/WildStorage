@@ -89,3 +89,25 @@ char *acstrDecode(char *restrict dst,
   *dst = 0;
   return dst;
 }
+
+// Function added by NovaSquirrel
+#include <string.h>
+void ascii_str_to_acww(unsigned char *acww, const char *ascii, int size) {
+	for(int i=0; i<size; i++) {
+		if(*ascii) {
+			char c = *(ascii++);
+			int found = 0;
+			for(int j=0; j<256; j++) {
+				if(strlen(acstrToLatin1[j]) == 1 && acstrToLatin1[j][0] == c) {
+					acww[i] = j;
+					found = 1;
+					break;
+				}
+			}
+			if(!found)
+				acww[i] = 0x9C; // "?"
+		} else {
+			acww[i] = 0;
+		}
+	}
+}

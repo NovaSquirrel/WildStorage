@@ -26,6 +26,8 @@
 #include <nds.h>
 #include "wild.h"
 
+u16 ui_palette_offset = 0; // ORed into all text written
+
 const char *are_you_sure_options[] = {"No", "Yes!"};
 const char *ok_options[] = {"OK"};
 
@@ -50,7 +52,7 @@ void map_put(u16 *map, int x, int y, u16 c) {
 void map_print(u16 *map, int x, int y, const char *text) {
 	int index = y * 32 + x;
 	while(*text) {
-		map[index++] = *text;
+		map[index++] = *text | ui_palette_offset;
 		text++;
 	}
 }

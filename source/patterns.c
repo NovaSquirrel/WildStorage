@@ -101,8 +101,9 @@ const unsigned short pattern_shared_colors[] __attribute__((aligned(4))) = {
 
 // ------------------------------------------------------------------------------------------------
 // Strings
-const char *edit_pattern_options[] = {"Edit pattern", "Load from file", "Save to file", "Copy pattern", "Paste pattern", "Copy author", "Paste author", "Delete", "View pattern info"};
+const char *edit_pattern_options[] = {"Edit pattern", "Load from file", "Save to file (Auto name)", "Save to file (Type in a name)", "Copy pattern", "Paste pattern", "Copy author", "Paste author", "Delete", "View pattern info"};
 const char *bottom_screen_pattern_row_names[] = {"Able Sisters", "Villagers", "Town Flag", "Blanca"};
+extern const char *are_you_sure_options[];
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -130,10 +131,13 @@ bool have_copied_name = false;
 struct acww_pattern extra_pattern_storage[EXTRA_PATTERN_STORAGE_SIZE];
 bool edited_extra_patterns = false;
 
+extern struct acww_pattern edited_pattern;
+
 // ------------------------------------------------------------------------------------------------
 // Functions
 extern bool has_acww_folder;
 int makeFolder(const char *path);
+void pattern_editor();
 
 void upload_pattern_palette() {
 	dmaCopy(pattern_shared_colors,   BG_PALETTE+PATTERN_SHARED_COLOR_STARTS_AT,     sizeof(pattern_shared_colors));
@@ -411,14 +415,23 @@ void menu_patterns() {
 			}
 			bgHide(pattern_select_screen ? subBG256 : mainBG256);
 			u16 *screen = pattern_select_screen ? subBGMapText : mainBGMapText;
-			int edit_type = choose_from_list_on_screen(screen, "Edit pattern", edit_pattern_options, 9, pattern_edit_option);
+			int edit_type = choose_from_list_on_screen(screen, "Edit pattern", edit_pattern_options, 10, pattern_edit_option);
 			struct acww_pattern *pattern = get_pattern_for_slot(pattern_select_screen, pattern_select_x, pattern_select_y);
 
 			if(edit_type >= 0) {
 				pattern_edit_option = edit_type;
 				switch(edit_type) {
 					case 0: // Edit
-						choose_from_list_on_screen(screen, "Not implemented yet!", ok_options, 1, 0);
+						edited_pattern = *pattern;
+						bgHide(subBG256);
+						pattern_editor();
+						bgHide(mainBG256);
+						redraw_pattern_manager_top_screen(1, 0);
+						if(choose_from_list_on_screen(screen, "Save changes?", are_you_sure_options, 2, 1) == 1) {
+							*pattern = edited_pattern;
+						}
+						bgShow(subBG256);
+						bgShow(mainBG256);
 						break;
 					case 1: // Load from file
 					{
@@ -444,7 +457,8 @@ void menu_patterns() {
 						free(original_filename);
 						break;
 					}
-					case 2: // Save to file
+					case 2: // Save to file (auto name)
+					case 3: // Save to file (custom name)
 					{
 						bool has_pattern_folder = has_acww_folder && makeFolder("/data/acww/patterns") >= 0;
 						const char *pattern_folder_prefix = "";
@@ -452,17 +466,23 @@ void menu_patterns() {
 							pattern_folder_prefix = "/data/acww/patterns/";
 						}
 
-						char name_buffer[16*3+1];
-						char author_buffer[8*3+1];
-						char town_buffer[8*3+1];
-						acstrDecode(name_buffer,   pattern->pattern_name,     16);
-						acstrDecode(town_buffer,   pattern->author_town.name, 8);
-						acstrDecode(author_buffer, pattern->author.name,      8);
-						fix_invalid_filename_chars(name_buffer);
-						fix_invalid_filename_chars(author_buffer);
-						fix_invalid_filename_chars(town_buffer);
-						sprintf(full_file_path, "%s%s by %s in %s.acww", pattern_folder_prefix, name_buffer, author_buffer, town_buffer);
-
+						if(edit_type == 2) {
+							char name_buffer[16*3+1];
+							char author_buffer[8*3+1];
+							char town_buffer[8*3+1];
+							acstrDecode(name_buffer,   pattern->pattern_name,     16);
+							acstrDecode(town_buffer,   pattern->author_town.name, 8);
+							acstrDecode(author_buffer, pattern->author.name,      8);
+							fix_invalid_filename_chars(name_buffer);
+							fix_invalid_filename_chars(author_buffer);
+							fix_invalid_filename_chars(town_buffer);
+							sprintf(full_file_path, "%s%s by %s in %s.acww", pattern_folder_prefix, name_buffer, author_buffer, town_buffer);
+						} else {
+							const char *name = ask_for_text("Pattern filename?", NULL, 0);
+							if(name == NULL)
+								break;
+							sprintf(full_file_path, "%s%s.acww", pattern_folder_prefix, name);
+						}
 						int is_ok = 1;
 						FILE *f = fopen(full_file_path, "rb");
 						if(f) {
@@ -484,23 +504,23 @@ void menu_patterns() {
 						}
 						break;
 					}
-					case 3: // Copy pattern
+					case 4: // Copy pattern
 						have_copied_pattern = true;
 						copied_pattern = *pattern;
 						break;
-					case 4: // Paste pattern
+					case 5: // Paste pattern
 						if(have_copied_pattern) {
 							*pattern = copied_pattern;
 						}
 						if(pattern_select_screen)
 							edited_extra_patterns = true;
 						break;
-					case 5: // Copy creator info
+					case 6: // Copy creator info
 						copied_author      = pattern->author;
 						copied_author_town = pattern->author_town;
 						have_copied_name = true;
 						break;
-					case 6: // Paste creator info
+					case 7: // Paste creator info
 						if(have_copied_name) {
 							pattern->author      = copied_author;
 							pattern->author_town = copied_author_town;
@@ -508,7 +528,7 @@ void menu_patterns() {
 						if(pattern_select_screen)
 							edited_extra_patterns = true;
 						break;
-					case 7: // Delete
+					case 8: // Delete
 					{
 						char delete_buffer[100];
 						acstrDecode(text_conversion_buffer, pattern->pattern_name, 16);
@@ -520,7 +540,7 @@ void menu_patterns() {
 							edited_extra_patterns = true;
 						break;
 					}
-					case 8: // View pattern info
+					case 9: // View pattern info
 						sprintf(title_buffer, "Mystery value: %x", pattern->unknown2 & 15);
 						choose_from_list_on_screen(screen, title_buffer, ok_options, 1, 0);
 						sprintf(title_buffer, "Author: %.4x; Town: %.4x", pattern->author.id, pattern->author_town.id);

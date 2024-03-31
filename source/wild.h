@@ -9,6 +9,7 @@ extern int current_player;
 extern int player_offset;
 extern u8 savefile[256 * 1024];
 extern const char *acww_folder_prefix;
+extern u16 ui_palette_offset;
 
 extern int mainBGText, mainBG256, mainBGBehind, subBGText, subBG256, subBGBehind;
 extern u16 *mainBGMapText;
@@ -26,6 +27,7 @@ const char *town_name();
 const char *text_from_save(int index, int length);
 void fix_invalid_filename_chars(char *buffer);
 const char *town_name_for_filename();
+void ascii_str_to_acww(u8 *acww, const char *ascii, int size);
 
 // Menus
 int confirm_choice(const char *prompt);
@@ -39,6 +41,9 @@ int popup_noticef_on_screen(u16 *map, const char *fmt, ...);
 int choose_file(int file_type);
 int choose_file_on_screen(u16 *map, int file_type);
 int edit_item_menu(u16 *screen, u16 item, int include_sort);
+int ask_for_text_in_buffer(const char *prompt, char *buffer, int limit);
+const char *ask_for_text(const char *prompt, const char *default_str, int limit);
+int ask_for_u16(const char *prompt, int initial);
 
 void clear_screen(u16 *screen);
 void clear_screen_256(u16 *map);

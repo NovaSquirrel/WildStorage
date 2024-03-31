@@ -27,7 +27,7 @@
 #include <sys/stat.h> // For mkdir
 #include <stdio.h>
 #include <stdarg.h>
-#include <fatfs.h>
+#include <fat.h>
 #include <nds.h>
 #include <nds/arm9/dldi.h>
 #include <time.h>
@@ -439,8 +439,6 @@ int main(int argc, char **argv) {
     setBrightness(3, 0); // Both screens full brightness
 
 	//keyboardShow();
-
-	pattern_editor();
 
 	bool init_ok = fatInitDefault();
 	if(!init_ok) {
