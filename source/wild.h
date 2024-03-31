@@ -10,6 +10,7 @@ extern int player_offset;
 extern u8 savefile[256 * 1024];
 extern const char *acww_folder_prefix;
 extern u16 ui_palette_offset;
+extern bool no_savefile_mode;
 
 extern int mainBGText, mainBG256, mainBGBehind, subBGText, subBG256, subBGBehind;
 extern u16 *mainBGMapText;

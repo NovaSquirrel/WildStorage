@@ -210,7 +210,7 @@ void pattern_editor() {
 	bgSetPriority(mainBGBehind, 2);
 	oamInit(&oamMain, SpriteMapping_1D_32, false);
 	bgSetScroll(mainBGText, 0, -6);
-
+	bgUpdate();
 	draw_pattern_editor_tool_page(0);
 
 	// Variables
@@ -781,13 +781,25 @@ void pattern_editor() {
 		}
 
 		// Exit
-		if(keys_down & KEY_START)
-			break;
-
+		if(keys_down & KEY_START) {
+			oamClear(&oamMain, 0, 0);
+			bgHide(mainBG256);
+			bgSetScroll(mainBGText, 0, 0);
+			bgUpdate();
+			if(confirm_choice("All done?") == 1) {
+				break;
+			}
+			clear_screen(mainBGMapText);
+			draw_pattern_editor_tool_page(edit_tool_page);
+			bgSetScroll(mainBGText, 0, -6);
+			bgUpdate();
+			bgShow(mainBG256);
+		}
 	}
 	edited_pattern.unknown2 =  (edited_pattern.unknown2 & 0x0f) | (pattern_edit_palette << 4);
 
-	// Clean up
+	// Clean up after the bitmap mode switch
+	clear_screen(mainBGMapText);
 	dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256);
 	set_default_video_mode();
 }

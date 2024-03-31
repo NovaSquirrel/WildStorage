@@ -159,22 +159,27 @@ void load_extra_patterns() {
 	}
 }
 
-void save_extra_patterns() {
+int save_extra_patterns() {
+	int success = 1;
 	const char *town = town_name_for_filename();
 
 	if(edited_extra_patterns) {
 		sprintf(full_file_path, "%sextra_%s_patterns.bin", acww_folder_prefix, town);
 		FILE *f = fopen(full_file_path, "wb");
 		if(f) {
-			if(fwrite(extra_pattern_storage, 1, sizeof(extra_pattern_storage), f) != sizeof(extra_pattern_storage))
+			if(fwrite(extra_pattern_storage, 1, sizeof(extra_pattern_storage), f) != sizeof(extra_pattern_storage)) {
 				popup_notice("Couldn't save patterns file");
+				success = 0;
+			}
 			fclose(f);
 		} else {
 			popup_notice("Couldn't create patterns file");
+			success = 0;
 		}
 
 		edited_extra_patterns = false;
 	}
+	return success;
 }
 
 struct acww_pattern *get_pattern_for_slot(int screen, int slot_x, int slot_y) {
@@ -326,19 +331,23 @@ void menu_patterns() {
 		if(keys_repeat & KEY_LEFT) {
 			pattern_select_x = (pattern_select_x - 1) & 7;
 			if(pattern_select_x == 7) {
-				if(pattern_select_screen == 0)
-					pattern_select_page[0] ^= 1;
-				else
+				if(pattern_select_screen == 0) {
+					if(!no_savefile_mode)
+						pattern_select_page[0] ^= 1;						
+				} else {
 					pattern_select_page[1] = (pattern_select_page[1] - 1) & 31;
+				}
 			}
 		}
 		if(keys_repeat & KEY_RIGHT) {
 			pattern_select_x = (pattern_select_x + 1) & 7;
 			if(pattern_select_x == 0) {
-				if(pattern_select_screen == 0)
-					pattern_select_page[0] ^= 1;
-				else
+				if(pattern_select_screen == 0) {
+					if(!no_savefile_mode)
+						pattern_select_page[0] ^= 1;
+				} else {
 					pattern_select_page[1] = (pattern_select_page[1] + 1) & 31;
+				}
 			}
 		}
 		if(pattern_select_screen == 0 && pattern_select_page[0] != old_pattern_select_page)
@@ -424,14 +433,25 @@ void menu_patterns() {
 					case 0: // Edit
 						edited_pattern = *pattern;
 						bgHide(subBG256);
+						// Clear out tileset to prevent graphical issues
+						dmaFillHalfWords(0, bgGetGfxPtr(subBG256), 256*256);
+
 						pattern_editor();
-						bgHide(mainBG256);
-						redraw_pattern_manager_top_screen(1, 0);
-						if(choose_from_list_on_screen(screen, "Save changes?", are_you_sure_options, 2, 1) == 1) {
+						clear_screen(mainBGMapText);
+
+						if(choose_from_list_on_screen(mainBGMapText, "Save changes?", are_you_sure_options, 2, 1) == 1) {
 							*pattern = edited_pattern;
+							if(pattern_select_screen)
+								edited_extra_patterns = true;
+						} else {
+							// Put the pattern in the copied slot instead so you can still get it even if you don't save
+							choose_from_list_on_screen(mainBGMapText, "Pattern copied to clipboard", ok_options, 1, 0);
+							have_copied_pattern = true;
+							copied_pattern = edited_pattern;
 						}
+						redraw_pattern_manager_top_screen(1, 1);
+						redraw_pattern_manager_bottom_screen(1, 1);
 						bgShow(subBG256);
-						bgShow(mainBG256);
 						break;
 					case 1: // Load from file
 					{
@@ -478,6 +498,9 @@ void menu_patterns() {
 							fix_invalid_filename_chars(town_buffer);
 							sprintf(full_file_path, "%s%s by %s in %s.acww", pattern_folder_prefix, name_buffer, author_buffer, town_buffer);
 						} else {
+							// Clear out tileset to prevent graphical issues
+//							dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256);
+
 							const char *name = ask_for_text("Pattern filename?", NULL, 0);
 							if(name == NULL)
 								break;
@@ -621,4 +644,42 @@ void menu_patterns() {
 	clear_screen_256(subBGMap256);
 	chdir(original_directory);
 	free(original_directory);
+}
+
+void patterns_only_mode() {
+	memset(savefile, 0, sizeof(savefile));
+	const char *patterns_mode_options[] = {"Patterns", "Save", "Quit"};
+	no_savefile_mode = true;
+
+	for(int i=0; i<4; i++) {
+		savefile[0x228E + PER_PLAYER_OFFSET*i + 0] = 0x14; // T
+		savefile[0x228E + PER_PLAYER_OFFSET*i + 1] = 0x1F; // e
+		savefile[0x228E + PER_PLAYER_OFFSET*i + 2] = 0x27; // m
+		savefile[0x228E + PER_PLAYER_OFFSET*i + 3] = 0x2A; // p
+		savefile[0x228E + PER_PLAYER_OFFSET*i + 4] = 0x85; //  
+		savefile[0x228E + PER_PLAYER_OFFSET*i + 5] = 0x36 + i; //  Number
+	}
+	// Leave town name blank
+
+	load_extra_patterns();
+	int patterns_mode_y = 0;
+	while(1) {
+		clear_screen(subBGMapText);
+		int which = choose_from_list("Patterns-only mode", patterns_mode_options, 3, patterns_mode_y);
+		if(which >= 0)
+			patterns_mode_y = which;
+		switch(which) {
+			case 0:
+				menu_patterns();
+				break;
+			case 1:
+				if(save_extra_patterns())
+					popup_notice("Saved the patterns!");
+				break;
+			case 2:
+				if(confirm_choice("Really exit?") == 1)
+					return;
+				break;
+		}
+	}
 }

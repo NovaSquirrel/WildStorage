@@ -47,11 +47,12 @@ void menu_patterns();
 void menu_townmap();
 void menu_house();
 void pattern_editor();
+void patterns_only_mode();
 
 void load_extra_storage();
 void save_extra_storage();
 void load_extra_patterns();
-void save_extra_patterns();
+int save_extra_patterns();
 const char *getNeighborName(size_t id);
 void upload_pattern_palette();
 
@@ -60,6 +61,7 @@ void upload_pattern_palette();
 const char *main_menu_options[] = {"Save/Load", "Item storage", "Patterns", "Map", "House", "Utilities", "Edit player", "Quit"};
 const char *file_options[] = {"Load file", "Save file", "Save backup", "Load from cartridge", "Save to cartridge", "Eject cartridge"};
 const char *title_screen_options[] = {"Load from SD card", "Load from cartridge", "Draw patterns", "Quit"};
+const char *patterns_mode_options[] = {"Patterns", "Save", "Quit"};
 
 // ------------------------------------------------------------------------------------------------
 // Variables
@@ -80,6 +82,8 @@ u16 *mainBGMapBehind;
 u16 *subBGMapText;
 u16 *subBGMap256;
 u16 *subBGMapBehind;
+
+bool no_savefile_mode = false;
 
 static bool cartridge_initialized = false;
 
@@ -384,6 +388,11 @@ void set_default_video_mode() {
 	bgSetPriority(subBG256,    1);
 	bgSetPriority(subBGBehind, 2);
 
+	int background_scroll_slower = background_scroll / 8;
+	bgSetScroll(mainBGBehind, background_scroll_slower, background_scroll_slower);
+	bgSetScroll(subBGBehind,  background_scroll_slower, background_scroll_slower);
+	bgUpdate();
+
     mainBGMapText   = (u16*)bgGetMapPtr(mainBGText);
     mainBGMap256    = (u16*)bgGetMapPtr(mainBG256);
     mainBGMapBehind = (u16*)bgGetMapPtr(mainBGBehind);
@@ -495,7 +504,8 @@ int main(int argc, char **argv) {
 			}
 			case 2: // Draw patterns
 			{
-				break;
+				patterns_only_mode();
+				return 0;
 			}
 			case 3: // Quit
 				return 0;
@@ -534,7 +544,10 @@ int main(int argc, char **argv) {
 				menu_player_edit();
 				break;
 			case 7:
-				return 0;
+				if(confirm_choice("Really exit?") == 1) {
+					return 0;
+				}
+				break;
 		}
 		oamClear(&oamMain, 0, 0);
 		oamClear(&oamSub, 0, 0);
