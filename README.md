@@ -15,6 +15,7 @@ Pattern management features:
 * Export individual patterns to files
 * Copy the author from one pattern onto another pattern
 * Extra space to store 1024 patterns per-town, stored outside of the savefile
+* Edit patterns directly in the tool
 
 Player editing:
 * Emotions

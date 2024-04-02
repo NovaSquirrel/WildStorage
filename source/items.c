@@ -3363,46 +3363,6 @@ f030      Surrounding area not available
 fff1      Empty space
 */
 
-enum {
-	ICON_EMPTY     = ' ',
-	ICON_X         = 0xc0,
-	ICON_UNKNOWN   = 0xc1,
-	ICON_ITEM      = 0xc2,
-	ICON_FURNITURE = 0xc3,
-	ICON_SHIRT     = 0xc4,
-	ICON_HAT       = 0xc5,
-	ICON_GLASSES   = 0xc6,
-	ICON_BELLS     = 0xc7,
-	ICON_TOOL      = 0xc8,
-	ICON_MUSIC     = 0xc9,
-	ICON_UMBRELLA  = 0xca,
-	ICON_GYROID    = 0xcb,
-	ICON_FOSSIL    = 0xcc,
-	ICON_FOSSIL_ID = 0xcd,
-	ICON_SHELL     = 0xce,
-	ICON_TRASH     = 0xcf,
-	ICON_FISH      = 0xd0,
-	ICON_BUG       = 0xd1,
-	ICON_BUILDING  = 0xd2,
-	ICON_TREE      = 0xd3,
-	ICON_FLOWER    = 0xd4,
-	ICON_ROCK      = 0xd5,
-	ICON_WEED      = 0xd6,
-	ICON_FLOWERBAG = 0xd7,
-	ICON_SAPLING   = 0xd8,
-	ICON_EXPLOSIVE = 0xd9,
-	ICON_FRUIT     = 0xda,
-	ICON_PAPER     = 0xdb,
-	ICON_ACORN     = 0xdc,
-	ICON_TURNIP    = 0xdd,
-	ICON_PITFALL   = 0xde,
-	ICON_PRESENT   = 0xdf,
-	ICON_PICTURE   = 0xec,
-	ICON_MAIL      = 0xed,
-	ICON_PATTERN   = 0xee,
-	ICON_SPACE_USED = 0xef,
-};
-
 unsigned short icon_for_item(unsigned short item_id) {
 	if(item_id == 0xfff1)
 		return ICON_EMPTY;

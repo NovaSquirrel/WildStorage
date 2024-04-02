@@ -8,7 +8,7 @@
 -mR!
 -m!
 
-# Don't Generate a palette
+# Don't generate a palette
 -p!
 
 # Black is transparent
