@@ -217,6 +217,20 @@ void copy_pattern_to_vram(struct acww_pattern *pattern, u16 *vram) {
 	}
 }
 
+void copy_pattern_to_vram_8x8(struct acww_pattern *pattern, u16 *vram) {
+	u8 palette_offset = pattern->unknown2 & 0xf0;
+
+	for(int y=0; y<8; y++) {
+		for(int x=0; x<8; x+=2) {
+			u8 byte1 = pattern->data[y*4][x*2];
+			u8 byte2 = pattern->data[y*4][x*2+1];
+			u8 left_pixel  = pattern_map_to_shared[palette_offset + (byte1 & 15)];
+			u8 right_pixel = pattern_map_to_shared[palette_offset + (byte2 & 15)];
+			vram[(x>>1) | (y<<2)] = left_pixel | (right_pixel << 8);
+		}
+	}
+}
+
 void pattern_tiles_at(u16 *map, int base_x, int base_y, int initial) {
 	int tile = initial;
 	for(int x=0; x<4; x++) {

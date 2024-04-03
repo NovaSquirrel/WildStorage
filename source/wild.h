@@ -58,6 +58,7 @@ int choose_from_list_on_screen(u16 *map, const char *prompt, const char **choice
 int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_item);
 void wait_for_start();
 void wait_vblank_and_animate();
+void just_animate_scrolling_bg();
 void upload_pattern_palette();
 void set_default_video_mode();
 
@@ -166,7 +167,9 @@ extern const unsigned short pattern_shared_colors[] __attribute__((aligned(4)));
 #define PER_PLAYER_OFFSET 8844
 #define TOWN_ITEM_GRID_START 0x0C354
 #define TOWN_ITEM_GRID_END   0x0E352
+#define HOLE_GRID_START 0x0E354
 #define YOUR_HOUSE_START 0xE558
+#define NEIGHBOR_START 0x09094
 
 // ------------------------------------------------------------------------------------------------
 // Structures

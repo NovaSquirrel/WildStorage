@@ -136,7 +136,7 @@ void show_town_information_on_top_screen() {
 
 	map_print(subBGMapText, 1, 8, "Villagers:");
 	for(int i=0; i<8; i++) {
-		int identity = savefile[0x09094 + 0x700*i + 0x73]; // romsave.txt seems to have the wrong offset here
+		int identity = savefile[NEIGHBOR_START + 0x700*i + 0x73]; // romsave.txt seems to have the wrong offset here
 		const char *name = getNeighborName(identity);
 		if(identity < 150) {
 			map_printf(subBGMapText, 1+(i&1)*16, 9+i/2, "* %s", name);
@@ -191,6 +191,13 @@ int reload_savefile() {
 }
 
 int background_scroll = 0;
+void just_animate_scrolling_bg() {
+	background_scroll++;
+	int background_scroll_slower = background_scroll / 8;
+	bgSetScroll(mainBGBehind, background_scroll_slower, background_scroll_slower);
+	bgSetScroll(subBGBehind,  background_scroll_slower, background_scroll_slower);
+}
+
 void wait_vblank_and_animate() {
 	swiWaitForVBlank();
 	oamUpdate(&oamMain);
