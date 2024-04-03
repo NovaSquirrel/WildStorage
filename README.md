@@ -24,6 +24,11 @@ Map editing features:
 * "Pattern mode" which lets you draw patterns onto the map and preview them there
 * Will update neighbor coordinates if you move their houses
 
+House editing features:
+* Move items around between your house's rooms
+* Place arbitrary items in your house
+* Put arbitrary furniture on top of other furniture, or out of bounds
+
 Player editing:
 * Emotions
 * Hair style and color
