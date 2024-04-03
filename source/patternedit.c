@@ -722,6 +722,7 @@ void pattern_editor() {
 		}
 
 		map_printf(subBGMapText,  20, 19, "Palette: %d ", pattern_edit_palette+1);
+		map_printf(subBGMapText,  1,  18, "Cursor: %2d %2d", edit_x, edit_y);
 
 		// Rename
 		if(keys_down & KEY_SELECT) {
