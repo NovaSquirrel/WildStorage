@@ -391,10 +391,10 @@ void menu_patterns() {
 
 				struct acww_pattern *pattern = get_pattern_for_slot(pattern_select_screen, pattern_select_x, pattern_select_y);
 				struct acww_pattern temp = *pattern;
+				pattern_swapping = false;
 				if(pattern != pattern_swap_pointer) {
 					*pattern = *pattern_swap_pointer;
 					*pattern_swap_pointer = temp;
-					pattern_swapping = false;
 
 					// Load new patterns
 					if(pattern_select_screen == 0 || pattern_swap_screen == 0)
