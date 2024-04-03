@@ -239,7 +239,7 @@ void pattern_editor() {
 			clear_screen(subBGMapText);
 
 			// Display instructions and info
-			map_print(subBGMapText,  1, 1, "\xe0:Draw \xe1:Pick \xe2:Colors \xe3:Tools");
+			map_print(subBGMapText,  1, 1, "\xe0:Draw \xe1:Get \xe2:Colors \xe3:Tools");
 			map_print(subBGMapText,  1, 2, "Start:Finish  \xe4\xe5:Switch color");
 			map_print(subBGMapText,  1, 19, "Select:Rename");
 			map_box(subBGMapText,  0,  20, 32, 4);

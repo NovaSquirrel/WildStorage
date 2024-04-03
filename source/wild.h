@@ -133,6 +133,7 @@ enum {
 	ICON_TURNIP    = 0xdd,
 	ICON_PITFALL   = 0xde,
 	ICON_PRESENT   = 0xdf,
+	ICON_BURIED    = 0xeb,
 	ICON_PICTURE   = 0xec,
 	ICON_MAIL      = 0xed,
 	ICON_PATTERN   = 0xee,

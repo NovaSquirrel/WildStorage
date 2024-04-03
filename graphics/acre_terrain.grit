@@ -1,0 +1,15 @@
+# 8bpp
+-gB8
+
+# Generate a tileset
+-g
+
+# Don't optimize repeated tiles, and don't generate a tilemap
+-mR!
+-m!
+
+# Don't generate a palette
+-p!
+
+# The first color is transparent
+-gT1a1c2c

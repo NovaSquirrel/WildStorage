@@ -515,6 +515,9 @@ int main(int argc, char **argv) {
 	// Main menu
 	int main_menu_y = 0;
 	while(1) {
+		oamClear(&oamMain, 0, 0);
+		oamClear(&oamSub, 0, 0);
+
 		sprintf(title_buffer, "Main menu");
 		int new_menu_y = choose_from_list(title_buffer, main_menu_options, 8, main_menu_y);
 		if(new_menu_y >= 0)
@@ -549,8 +552,6 @@ int main(int argc, char **argv) {
 				}
 				break;
 		}
-		oamClear(&oamMain, 0, 0);
-		oamClear(&oamSub, 0, 0);
 		show_town_information_on_top_screen();
 	}
 }
