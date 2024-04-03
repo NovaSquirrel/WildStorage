@@ -17,6 +17,13 @@ Pattern management features:
 * Extra space to store 1024 patterns per-town, stored outside of the savefile
 * Edit patterns directly in the tool
 
+Map editing features:
+* Move items around on the town map
+* Bury and un-bury items
+* Place arbitrary items onto the map, including over rivers
+* "Pattern mode" which lets you draw patterns onto the map and preview them there
+* Will update neighbor coordinates if you move their houses
+
 Player editing:
 * Emotions
 * Hair style and color
