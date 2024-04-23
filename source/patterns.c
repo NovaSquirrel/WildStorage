@@ -445,6 +445,7 @@ void menu_patterns() {
 				pattern_edit_option = edit_type;
 				switch(edit_type) {
 					case 0: // Edit
+						bgShow(subBG256);
 						edited_pattern = *pattern;
 						// Clear out tileset to prevent graphical issues
 						dmaFillHalfWords(0, bgGetGfxPtr(subBG256), 256*256);
