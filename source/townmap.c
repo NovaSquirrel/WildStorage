@@ -38,6 +38,8 @@
 extern const char acre_maps[];
 extern int pattern_select_page[2];
 int townmap_pattern_mode = 0;
+int town_map_edit_x = 32;
+int town_map_edit_y = 32;
 
 // ------------------------------------------------------------------------------------------------
 // Functions
@@ -192,8 +194,8 @@ void menu_townmap() {
 	map_box(subBGMapText,  0,  20, 32, 4); // Box that will hold item info
 
 	// Variables
-	int edit_x = 32;
-	int edit_y = 32;
+	int edit_x = town_map_edit_x;
+	int edit_y = town_map_edit_y;
 	int pattern_x = 0;
 	int pattern_y = 0;
 	bool edit_swapping = false;
@@ -457,4 +459,6 @@ void menu_townmap() {
 			savefile[NEIGHBOR_START + 0x700*neighbor + 0x91] = neighbor_y[neighbor];
 		}
 	}
+	town_map_edit_x = edit_x;
+	town_map_edit_y = edit_y;
 }

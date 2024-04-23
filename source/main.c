@@ -477,7 +477,7 @@ int main(int argc, char **argv) {
 	map_print(subBGMapText,  1, 10, "WildStorage");
 	map_print(subBGMapText,  1, 11, "An ACWW item storage tool");
 	map_print(subBGMapText,  1, 13, "made by NovaSquirrel");
-	map_print(subBGMapText,  1, 20, "Version 1.0.0");
+	map_print(subBGMapText,  1, 20, "Version 1.0.2");
 
 	int title_screen_y = 0;
 	bool proceed_from_title_screen = 0;

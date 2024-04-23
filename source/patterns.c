@@ -446,7 +446,6 @@ void menu_patterns() {
 				switch(edit_type) {
 					case 0: // Edit
 						edited_pattern = *pattern;
-						bgHide(subBG256);
 						// Clear out tileset to prevent graphical issues
 						dmaFillHalfWords(0, bgGetGfxPtr(subBG256), 256*256);
 
@@ -465,7 +464,6 @@ void menu_patterns() {
 						}
 						redraw_pattern_manager_top_screen(1, 1);
 						redraw_pattern_manager_bottom_screen(1, 1);
-						bgShow(subBG256);
 						break;
 					case 1: // Load from file
 					{

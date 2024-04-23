@@ -78,6 +78,9 @@ enum {
 #define EDIT_TOOLS_X 4
 #define EDIT_TOOLS_Y 110
 
+void copy_pattern_to_vram(struct acww_pattern *pattern, u16 *vram);
+void pattern_tiles_at(u16 *map, int base_x, int base_y, int initial);
+
 void rectfill_bitmap_16(u16 *bitmap, int base_x, int base_y, int w, int h, u16 value) {
 	for(int y=0; y<h; y++) {
 		for(int x=0; x<w; x++) {
@@ -132,6 +135,9 @@ void redraw_edited_pattern() {
 			}	
 		}
 	}
+
+	// Copy to the top screen preview
+	copy_pattern_to_vram(&edited_pattern, bgGetGfxPtr(subBG256)+32);
 }
 
 void draw_pattern_editor_tool_page(int page) {
@@ -196,6 +202,20 @@ void pattern_flood_fill(int x, int y, int new_color) {
 
 void pattern_editor() {
 	clear_screen(mainBGMapText);
+	clear_screen(subBGMap256);
+	pattern_tiles_at(subBGMap256, 1,   4, 1);
+	pattern_tiles_at(subBGMap256, 1+4, 4, 1);
+	pattern_tiles_at(subBGMap256, 1,   4+4, 1);
+	pattern_tiles_at(subBGMap256, 1+4, 4+4, 1);
+	// Do flipped preview too
+	pattern_tiles_at(subBGMap256, 23,   4, 1);
+	for(int y=0; y<4; y++) {
+		for(int x=0; x<4; x++) {
+			map_put(subBGMap256, 23+4+x, 4+y,   (1+(3-x)*4+y) | TILE_FLIP_H);
+			map_put(subBGMap256, 23+x,   4+4+y, (1+x*4+(3-y)) | TILE_FLIP_V);
+			map_put(subBGMap256, 23+4+x, 4+4+y, (1+(3-x)*4+(3-y)) | TILE_FLIP_H | TILE_FLIP_V);
+		}
+	}	
 
 	wait_vblank_and_animate();
 	dmaFillHalfWords(0, bgGetGfxPtr(mainBG256), 256*256); // Clear whole screen
@@ -614,7 +634,7 @@ void pattern_editor() {
 							break;
 						case TOOL_HFLIP:
 							create_pattern_undo_step();
-							for(int y=0; y<31; y++)
+							for(int y=0; y<32; y++)
 								for(int x=0; x<16; x++) {
 									swap_pattern_pixels(x, y, 31-x, y);
 								}
