@@ -222,19 +222,19 @@ void set_inventory_item(int inventory, int slot, u16 item) {
 	switch(inventory) {
 		case 0:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*0 + slot*2, item); break; // Inventory
 		case 1:  set_savefile_u16(0x15430 + 180*0  + slot*2, item); break; // Closet
-		case 2:  break;
+		case 2:  set_savefile_u16(0x01244 + PER_PLAYER_OFFSET*0 + slot*0xF4, item); break;
 
 		case 3:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*1 + slot*2, item); break; // Inventory
 		case 4:  set_savefile_u16(0x15430 + 180*1  + slot*2, item); break; // Closet
-		case 5:  break;
+		case 5:  set_savefile_u16(0x01244 + PER_PLAYER_OFFSET*1 + slot*0xF4, item); break;
 
 		case 6:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*2 + slot*2, item); break; // Inventory
 		case 7:  set_savefile_u16(0x15430 + 180*2  + slot*2, item); break; // Closet
-		case 8:  break;
+		case 8:  set_savefile_u16(0x01244 + PER_PLAYER_OFFSET*2 + slot*0xF4, item); break;
 
 		case 9:	 set_savefile_u16(0x01B2E + PER_PLAYER_OFFSET*3 + slot*2, item); break; // Inventory
 		case 10: set_savefile_u16(0x15430 + 180*3  + slot*2, item); break; // Closet
-		case 11: break;
+		case 11: set_savefile_u16(0x01244 + PER_PLAYER_OFFSET*3 + slot*0xF4, item); break;
 
 		case 12: set_savefile_u16(0x15EDE + slot*2, item); break; // Recycler
 		case 13: set_savefile_u16(0x15EC0 + slot*2, item); break; // Lost and found

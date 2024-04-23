@@ -3528,7 +3528,7 @@ int choose_item_from_all_on_screen(u16 *map, const char *prompt, u16 initial_ite
 			redraw_page = 0;
 		}
 
-		swiWaitForVBlank();
+		wait_vblank_and_animate();
 		scanKeys();
 
 		// Respond to button presses
