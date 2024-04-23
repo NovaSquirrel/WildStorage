@@ -2181,7 +2181,7 @@ struct item {
   {0x38f0, "basic painting (fake)"},
   {0x38f4, "famous painting (fake)"},
   {0x38f8, "perfect painting (fake)"},
-  {0x38fc, "awesome painting (fake)"},
+  {0x38fc, "amazing painting (fake)"},
   {0x3900, "nice painting (fake)"},
   {0x3904, "moving painting (fake)"},
   {0x3908, "common painting (fake)"},
