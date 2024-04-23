@@ -432,6 +432,7 @@ void menu_townmap() {
 	bgSetScroll(mainBGText, 0, 0);
 	clear_screen_256(subBGMap256);
 	clear_screen_256(mainBGMap256);
+	bgUpdate();
 
 	// Fix neighbor positions if their houses were moved
 	int neighbor_x[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
