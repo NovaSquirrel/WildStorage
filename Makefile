@@ -8,6 +8,9 @@ BLOCKSDS	?= /opt/blocksds/core
 
 NAME		:= wildstorage
 GAME_TITLE	:= Wild Storage
+GAME_SUBTITLE := ACWW save editor tool
+GAME_AUTHOR   := by NovaSquirrel - v1.0.2
+GAME_ICON     := $(CURDIR)/icon.png
 
 # Disable floating-point printf/scanf to reduce ROM usage.
 DEFINES     := -DPICOLIBC_LONG_LONG_PRINTF_SCANF
